@@ -185,8 +185,9 @@ class TreeSettingItem(QTreeWidgetItem):
         self.tree = tree
         self._value = value
         self.name = setting["name"]
+        self.labelText = setting["label"]
         self.settingType = setting["type"]
-        self.setText(0, self.name)
+        self.setText(0, self.labelText)
         if self.settingType == CRS:
             layout = QHBoxLayout()
             layout.setContentsMargins(0, 0, 0, 0)
@@ -228,7 +229,7 @@ class TreeSettingItem(QTreeWidgetItem):
             self.label.setText("<a href='#'>Edit</a>")
             self.newValue = value
             def edit():
-                dlg = TextEditorDialog(unicode(self.newValue), JSON)
+                dlg = TextEditorDialog(unicode(self.newValue))
                 dlg.exec_()
                 self.newValue = dlg.text
             self.label.connect(self.label, SIGNAL("linkActivated(QString)"), edit)
@@ -240,7 +241,7 @@ class TreeSettingItem(QTreeWidgetItem):
 
     def saveValue(self):
         value = self.value()
-        setPluginSetting(self.value, self.namespace)
+        setPluginSetting(self.name, self.value, self.namespace)
 
     def value(self):
         self.setBackgroundColor(0, Qt.white)
@@ -278,3 +279,32 @@ class TreeSettingItem(QTreeWidgetItem):
         else:
             self.setText(1, unicode(value))
 
+class TextEditorDialog(QDialog):
+
+    def __init__(self, text):
+        super(TextEditorDialog, self).__init__()
+
+        self.text = text
+
+        self.resize(600, 350)
+        self.setWindowFlags(self.windowFlags() | QtCore.Qt.WindowSystemMenuHint |
+                                                QtCore.Qt.WindowMinMaxButtonsHint)
+        self.setWindowTitle("Editor")
+
+        layout = QVBoxLayout()
+        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        self.editor = QTextEdit()
+        self.editor.setPlainText(text)
+        layout.addWidget(self.editor)
+        layout.addWidget(buttonBox)
+        self.setLayout(layout)
+
+        buttonBox.accepted.connect(self.okPressed)
+        buttonBox.rejected.connect(self.cancelPressed)
+
+    def okPressed(self):
+        self.text = self.editor.toPlainText()
+        self.close()
+
+    def cancelPressed(self):
+        self.close()
