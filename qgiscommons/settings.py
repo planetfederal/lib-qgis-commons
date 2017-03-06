@@ -6,6 +6,7 @@ from collections import defaultdict
 from PyQt4.QtGui import *
 from qgis.core import *
 from qgis.gui import *
+from qgis.utils import iface
 
 #Types to use in the settings.json file
 
@@ -44,8 +45,16 @@ def readSettings():
     with open(path) as f:
         _settings[namespace] = json.load(f)
 
-def openSettingsDialog():
+def addSettingsMenu(menuName):
     namespace = _callerName().split(".")[0]
+    settingsIcon = QgsApplication.getThemeIcon('/mActionHelpAPI.png')
+    settingsAction = QAction(settingsIcon, "Settings...", iface.mainWindow())
+    settingsAction.setObjectName(namespace + "settings")
+    settingsAction.triggered.connect(lambda: openSettingsDialog(namespace))
+    iface.addPluginToMenu(menuName, settingsAction)
+
+def openSettingsDialog(namespace):
+    print namespace
     dlg = ConfigDialog(namespace)
     dlg.exec_()
 
