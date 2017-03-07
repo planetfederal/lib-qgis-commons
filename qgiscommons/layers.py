@@ -26,16 +26,16 @@ def map_layers(name=None, types=None):
         return layers
 
 
-def add_layer(layer, load_in_legend=True):
+def addLayer(layer, loadInLegend=True):
     """
     Add a open layer to the QGIS session and layer registry.
     :param layer: The layer object to add the QGIS layer registry and session.
-    :param load_in_legend: True if this layer should be added to the legend.
+    :param loadInLegend: True if this layer should be added to the legend.
     :return: The added layer
     """
     if not hasattr(layer, "__iter__"):
         layer = [layer]
-    QgsMapLayerRegistry.instance().addMapLayers(layer, load_in_legend)
+    QgsMapLayerRegistry.instance().addMapLayers(layer, loadInLegend)
     return layer
 
 TYPE_MAP = {
@@ -64,16 +64,16 @@ def _fieldName(f):
         return f
     return f.name()
 
-def new_points_layer(filename, fields, crs, encoding="utf-8"):
+def newPointsLayer(filename, fields, crs, encoding="utf-8"):
     return newVectorLayer(filename, fields, QGis.WKBPoint, crs, encoding)
 
-def new_lines_layer(filename, fields, crs, encoding="utf-8"):
+def newLinesLayer(filename, fields, crs, encoding="utf-8"):
     return newVectorLayer(filename, fields, QGis.WKBLine, crs, encoding)
 
-def new_polygons_layer(filename, fields, crs, encoding="utf-8"):
+def newPolygonsLayer(filename, fields, crs, encoding="utf-8"):
     return newVectorLayer(filename, fields, QGis.WKBPolygon, crs, encoding)
 
-def new_vector_layer(filename, fields, geometryType, crs, encoding="utf-8"):
+def newVectorLayer(filename, fields, geometryType, crs, encoding="utf-8"):
     '''
     Creates a new vector layer
 
@@ -131,14 +131,14 @@ def new_vector_layer(filename, fields, geometryType, crs, encoding="utf-8"):
     return layer
 
 
-def create_wms_layer(url, layer, style, crs):
+def createWmsLayer(url, layer, style, crs):
     pass
 
-def create_wfs_layer(url, layer, crs):
+def createWfsLayer(url, layer, crs):
     pass
 
 
-def layer_from_name(name):
+def layerFromName(name):
     '''
     Returns the layer from the current project with the passed name
     Returns None if no layer with that name is found
@@ -149,7 +149,7 @@ def layer_from_name(name):
         if layer.name() == name:
             return layer
 
-def load_layer(filename, name = None):
+def loadLayer(filename, name = None):
     '''
     Tries to load a layer from the given file
 
@@ -167,7 +167,7 @@ def load_layer(filename, name = None):
 
     return qgslayer
 
-def load_layer_no_crs_dialog(filename, name=None):
+def loadLayerNoCrsDialog(filename, name=None):
     '''
     Tries to load a layer from the given file
     Same as the loadLayer method, but it does not ask for CRS, regardless of current 
@@ -182,9 +182,9 @@ def load_layer_no_crs_dialog(filename, name=None):
 
 
 
-def load_vector(path, name=None, provider="ogr"):
+def loadVector(path, name=None, provider="ogr"):
     """
-    Load a vector layer and return the QgsVectorLayer instance.
+    Loads a vector layer and returns the QgsVectorLayer instance.
     :param path: Path to the vector layer.
     :param name: The name of the new layer.
     :param provider: The provider to open this layer with defaults to ogr.

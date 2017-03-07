@@ -20,10 +20,29 @@ CHOICE  ="choice"
 CRS = "crs"
 
 def setPluginSetting(name, value, namespace = None):
+    '''
+    Sets the value of a plugin setting.
+
+    :param name: the name of the setting. It is not the full path, but just the last name of it
+    :param value: the value to set for the plugin setting 
+    :param namespace: The namespace. If not passed or None, the namespace will be inferred from 
+    the caller method. Normally, this should not be passed, since it suffices to let this function 
+    find out the plugin from where it is being called, and it will automatically use the 
+    corresponding plugin namespace
+    '''
     namespace = _callerName().split(".")[0]
     QSettings().setValue(namespace + "/" + name, value)
 
 def pluginSetting(name, namespace = None):
+    '''
+    Returns the value of a plugin setting.
+    
+    :param name: the name of the setting. It is not the full path, but just the last name of it
+    :param namespace: The namespace. If not passed or None, the namespace will be inferred from 
+    the caller method. Normally, this should not be passed, since it suffices to let this function 
+    find out the plugin from where it is being called, and it will automatically use the 
+    corresponding plugin namespace
+    '''    
     namespace = namespace or _callerName().split(".")[0]
     full_name = namespace + "/" + name
     if QSettings().contains(full_name):
@@ -40,12 +59,53 @@ def pluginSetting(name, namespace = None):
 _settings = {}
 
 def readSettings():
+    '''
+    Reads the settings corresponding to the plugin from where the method is called.
+    This function has to be called in the __init__ method of the plugin class.
+    Settings are stored in a settings.json file in the plugin folder.
+    Here is an eample of such a file:
+
+    [
+    {"name":"mysetting",
+     "label": "My setting",
+     "description": "A setting to customize my plugin",
+     "type": "string",
+     "default": "dummy string",
+     "group": "Group 1"
+    },
+    {"name":"anothersetting",
+      "label": "Another setting",
+     "description": "Another setting to customize my plugin",
+     "type": "number",
+     "default": 0,
+     "group": "Group 2"
+    },
+    {"name":"achoicesetting",
+     "label": "A choice setting",
+     "description": "A setting to select from a set of possible options",
+     "type": "choice",
+     "default": "option 1",
+     "options":["option 1", "option 2", "option 3"],
+     "group": "Group 2"
+    }
+    ]
+
+    Available types for settings are: string, bool, number, choice, crs and text (a multiline string)
+    '''
+
     namespace = _callerName().split(".")[0]
     path = os.path.join(os.path.dirname(_callerPath()), "settings.json")
     with open(path) as f:
         _settings[namespace] = json.load(f)
 
 def addSettingsMenu(menuName):
+    '''
+    Adds a 'open settings...' menu to the plugin menu.
+    This method should be called from the initGui() method of the plugin
+
+    :param menuName: The name of the plugin menu in which the settings menu is to be added
+    '''
+
     namespace = _callerName().split(".")[0]
     settingsIcon = QgsApplication.getThemeIcon('/mActionHelpAPI.png')
     settingsAction = QAction(settingsIcon, "Settings...", iface.mainWindow())
@@ -54,7 +114,10 @@ def addSettingsMenu(menuName):
     iface.addPluginToMenu(menuName, settingsAction)
 
 def openSettingsDialog(namespace):
-    print namespace
+    '''
+    Opens the settings dialog for the passed namespace.
+    Instead of calling this function directly, consider using addSettingsMenu()
+    '''    
     dlg = ConfigDialog(namespace)
     dlg.exec_()
 

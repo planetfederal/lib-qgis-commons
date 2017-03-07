@@ -1,4 +1,5 @@
 from utils import *
+from settings import *
 from PyQt4 import QtGui, QtCore
 from qgis.core import *
 import inspect
@@ -21,7 +22,7 @@ def load_ui(name):
 
 LAST_PATH = "LAST_PATH"
 
-def ask_for_files(parent, msg = None, isSave = False, allowMultiple = False, exts = "*"):
+def askForFiles(parent, msg = None, isSave = False, allowMultiple = False, exts = "*"):
     '''
     Asks for a file or files, opening the corresponding dialog with the last path that was selected 
     when this same function was invoked from the calling method. 
@@ -37,7 +38,7 @@ def ask_for_files(parent, msg = None, isSave = False, allowMultiple = False, ext
     '''
     msg = msg or 'Select file'
     name = _callerName()
-    path = plugin_setting(LAST_PATH, name)
+    path = pluginSetting(LAST_PATH, name)
     f = None
     if not isinstance(exts, list):
         exts = [exts]
@@ -58,11 +59,11 @@ def ask_for_files(parent, msg = None, isSave = False, allowMultiple = False, ext
         f = ret
 
     if f is not None:
-        set_plugin_setting(LAST_PATH, name, os.path.dirname(f))
+        setPluginSetting(LAST_PATH, name, os.path.dirname(f))
 
     return ret
 
-def ask_for_folder(parent, msg = None):
+def askForFolder(parent, msg = None):
         '''
     Asks for a folder, opening the corresponding dialog with the last path that was selected 
     when this same function was invoked from the calling method
@@ -72,10 +73,10 @@ def ask_for_folder(parent, msg = None):
     '''
     msg = msg or 'Select folder'
     name = _callerName()
-    path = plugin_setting(LAST_PATH, name)
+    path = pluginSetting(LAST_PATH, name)
     folder =  QtGui.QFileDialog.getExistingDirectory(parent, "Select folder to store app", path)
     if folder:
-        set_plugin_setting(LAST_PATH, name, folder)
+        setPlugiSetting(LAST_PATH, name, folder)
     return folder
 
 
