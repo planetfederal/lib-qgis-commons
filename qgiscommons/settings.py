@@ -98,6 +98,7 @@ def readSettings():
     with open(path) as f:
         _settings[namespace] = json.load(f)
 
+_settingActions = {}
 def addSettingsMenu(menuName):
     '''
     Adds a 'open settings...' menu to the plugin menu.
@@ -112,6 +113,12 @@ def addSettingsMenu(menuName):
     settingsAction.setObjectName(namespace + "settings")
     settingsAction.triggered.connect(lambda: openSettingsDialog(namespace))
     iface.addPluginToMenu(menuName, settingsAction)
+    global _settingActions
+    _settingActions[menuName] = settingsAction
+
+
+def removeSettingsMenu(menuName):
+    iface.removePluginWebMenu(menuName, _settingActions[menuName])
 
 def openSettingsDialog(namespace):
     '''
@@ -127,7 +134,6 @@ class ConfigDialog(QDialog):
 
     def __init__(self, namespace):
         self.settings = _settings[namespace]
-        print self.settings
         self.namespace = namespace
         QDialog.__init__(self)
         self.setupUi()
@@ -213,12 +219,18 @@ class ConfigDialog(QDialog):
         value = iterator.value()
         while value:
             if hasattr(value, 'saveValue'):
-                value.saveValue()
-            iterator += 1
+                try:
+                    value.saveValue()
+                except WrongValueException:
+                    return
+            iterator += 1            
             value = iterator.value()
+
         QDialog.accept(self)
 
 
+class WrongValueException(Exception):
+    pass
 
 class TreeSettingItem(QTreeWidgetItem):
 
@@ -313,7 +325,8 @@ class TreeSettingItem(QTreeWidgetItem):
             if self.settingType == BOOL:
                 return self.checkState(1) == Qt.Checked
             elif self.settingType == NUMBER:
-                return float(self.text(1))
+                v = float(self.text(1))
+                return 
             elif self.settingType == CHOICE:
                 return self.combo.currentText()
             elif self.settingType in [TEXT, CRS]:
