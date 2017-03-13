@@ -30,7 +30,7 @@ def setPluginSetting(name, value, namespace = None):
     find out the plugin from where it is being called, and it will automatically use the 
     corresponding plugin namespace
     '''
-    namespace = _callerName().split(".")[0]
+    namespace = namespace or _callerName().split(".")[0]
     QSettings().setValue(namespace + "/" + name, value)
 
 def pluginSetting(name, namespace = None):

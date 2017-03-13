@@ -161,7 +161,7 @@ def askForFiles(parent, msg = None, isSave = False, allowMultiple = False, exts 
         f = ret
 
     if f is not None:
-        setPluginSetting(name, namespace, os.path.dirname(f))
+        setPluginSetting(name, os.path.dirname(f), namespace)
 
     return ret
 
@@ -180,7 +180,7 @@ def askForFolder(parent, msg = None):
     path = pluginSetting(name, namespace)
     folder =  QtGui.QFileDialog.getExistingDirectory(parent, msg, path)
     if folder:
-        setPluginSetting(name, namespace, folder)
+        setPluginSetting(name, folder, namespace)
     return folder
 
 #=============
