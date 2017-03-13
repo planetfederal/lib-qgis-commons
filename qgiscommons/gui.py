@@ -1,4 +1,4 @@
-from utils import *
+from utils import _callerName, _callerPath
 from settings import *
 from PyQt4 import QtGui, QtCore
 from qgis.core import *
@@ -137,8 +137,10 @@ def askForFiles(parent, msg = None, isSave = False, allowMultiple = False, exts 
     :returns: A string with the selected filepath or an array of them, depending on whether allowMultiple is True of False
     '''
     msg = msg or 'Select file'
-    name = _callerName()
-    path = pluginSetting(LAST_PATH, name)
+    caller = _callerName().split(".")
+    name = "/".join([LAST_PATH, caller[-1]])
+    namespace = caller[0]
+    path = pluginSetting(name, namespace)
     f = None
     if not isinstance(exts, list):
         exts = [exts]
@@ -159,7 +161,7 @@ def askForFiles(parent, msg = None, isSave = False, allowMultiple = False, exts 
         f = ret
 
     if f is not None:
-        setPluginSetting(LAST_PATH, name, os.path.dirname(f))
+        setPluginSetting(name, namespace, os.path.dirname(f))
 
     return ret
 
@@ -172,14 +174,14 @@ def askForFolder(parent, msg = None):
     :param msg: The message to use for the dialog title
     '''
     msg = msg or 'Select folder'
-    name = _callerName()
-    path = pluginSetting(LAST_PATH, name)
-    folder =  QtGui.QFileDialog.getExistingDirectory(parent, "Select folder to store app", path)
+    caller = _callerName().split(".")
+    name = "/".join([LAST_PATH, caller[-1]])
+    namespace = caller[0]
+    path = pluginSetting(name, namespace)
+    folder =  QtGui.QFileDialog.getExistingDirectory(parent, msg, path)
     if folder:
-        setPlugiSetting(LAST_PATH, name, folder)
+        setPluginSetting(name, namespace, folder)
     return folder
-
-
 
 #=============
 
