@@ -5,7 +5,7 @@ from PyQt4 import QtGui, QtCore
 
 _layerreg = QgsMapLayerRegistry.instance()
 
-def map_layers(name=None, types=None):
+def mapLayers(name=None, types=None):
     """
     Return all the loaded layers.  Filters by name (optional) first and then type (optional)
     :param name: (optional) name of layer to return..
@@ -179,8 +179,6 @@ def loadLayerNoCrsDialog(filename, name=None):
     layer = load_layer(filename, name)
     settings.setValue('/Projections/defaultBehaviour', prjSetting)
     return layer
-
-
 
 def loadVector(path, name=None, provider="ogr"):
     """
