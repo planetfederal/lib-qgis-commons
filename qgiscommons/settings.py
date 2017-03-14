@@ -256,6 +256,22 @@ class TreeSettingItem(QTreeWidgetItem):
              }
             '''
 
+    def _addTextBoxWithLink(self, text, func, editable):
+        layout = QHBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        self.lineEdit = QLineEdit()
+        self.lineEdit.setText(self._value)
+        self.linkLabel = QLabel()
+        self.linkLabel.setText("<a href='#'> %s</a>" % text)
+        self.crsLabel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        layout.addWidget(self.lineEdit)
+        layout.addWidget(self.linkLabel)
+        self.newValue = value
+        self.linkLabel.connect(self.label, SIGNAL("linkActivated(QString)"), func)
+        w = QWidget()
+        w.setLayout(layout)
+        self.tree.setItemWidget(self, 1, w)
+
     def __init__(self, parent, tree, setting, namespace, value):
         QTreeWidgetItem.__init__(self, parent)
         self.parent = parent
@@ -267,16 +283,6 @@ class TreeSettingItem(QTreeWidgetItem):
         self.settingType = setting["type"]
         self.setText(0, self.labelText)
         if self.settingType == CRS:
-            layout = QHBoxLayout()
-            layout.setContentsMargins(0, 0, 0, 0)
-            self.crsLabel = QLabel()
-            self.crsLabel.setText(value)
-            self.label = QLabel()
-            self.label.setText("<a href='#'> Edit</a>")
-            self.crsLabel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-            layout.addWidget(self.crsLabel)
-            layout.addWidget(self.label)
-            self.newValue = value
             def edit():
                 selector = QgsGenericProjectionSelector()
                 selector.setSelectedAuthId(value)
@@ -284,11 +290,22 @@ class TreeSettingItem(QTreeWidgetItem):
                     authId = selector.selectedAuthId()
                     if authId.upper().startswith("EPSG:"):
                         self.newValue = authId
-                        self.crsLabel.setText(authId)
-            self.label.connect(self.label, SIGNAL("linkActivated(QString)"), edit)
-            w = QWidget()
-            w.setLayout(layout)
-            self.tree.setItemWidget(self, 1, w)
+                        self.lineEdit.setText(authId)
+            self._addTextBoxWithLink("Edit", edit, False)
+        elif self.settingType == FILE:
+            def edit():
+                f = QFileDialog.getOpenFileNames(None, "Select file", "", "*.*")
+                if f:
+                    self.newValue = f
+                    self.lineEdit.setText(f)
+            self._addTextBoxWithLink("Browse", edit, True)
+        elif self.settingType == FOLDER:
+            def edit():
+                f = QFileDialog.getExistingDirectory(parent, "Select folder", "")
+                if f:
+                    self.newValue = f
+                    self.lineEdit.setText(f)
+            self._addTextBoxWithLink("Browse", edit, True)
         elif self.settingType == BOOL:
             if value:
                 self.setCheckState(1, Qt.Checked)
@@ -332,7 +349,7 @@ class TreeSettingItem(QTreeWidgetItem):
                 return 
             elif self.settingType == CHOICE:
                 return self.combo.currentText()
-            elif self.settingType in [TEXT, CRS]:
+            elif self.settingType in [TEXT, CRS, FILE, FOLDER]:
                 return self.newValue
             else:
                 return self.text(1)
@@ -352,9 +369,9 @@ class TreeSettingItem(QTreeWidgetItem):
             self.combo.setCurrentIndex(idx)
         elif self.settingType == TEXT:
             self.newValue = value
-        elif self.settingType == CRS:
+        elif self.settingType in [CRS, FILE, FOLDER]:
             self.newValue = value
-            self.crsLabel.setText(value)
+            self.lineEdit.setText(value)
         else:
             self.setText(1, unicode(value))
 
