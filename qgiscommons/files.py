@@ -5,7 +5,6 @@ from PyQt4.QtCore import QDir
 from PyQt4.QtGui import QFileDialog
 import uuid
 
-_tempFolders = {}
 def removeTempFolder(namespace = None):
     namespace = namespace or _callerName().split(".")[0]
     shutil.rmtree(tempFolder(namespace))
