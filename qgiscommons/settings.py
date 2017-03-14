@@ -319,7 +319,7 @@ class TreeSettingItem(QTreeWidgetItem):
 
     def saveValue(self):
         value = self.value()
-        setPluginSetting(self.name, self.value, self.namespace)
+        setPluginSetting(self.name, value, self.namespace)
 
     def value(self):
         self.setBackgroundColor(0, Qt.white)
