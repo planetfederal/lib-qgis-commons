@@ -1,4 +1,5 @@
 from utils import _callerName, _callerPath
+from qgiscommons.authconfigselect import AuthConfigSelectDialog
 from PyQt4.QtCore import *
 import os
 import json
@@ -348,7 +349,7 @@ class TreeSettingItem(QTreeWidgetItem):
         elif self.settingType == AUTHCFG:
             def edit():
                 currentAuthCfg = self.value()
-                dlg = QgsAuthConfigSelectDialog(parent.treeWidget(), authcfg=currentAuthCfg)
+                dlg = AuthConfigSelectDialog(parent.treeWidget(), authcfg=currentAuthCfg)
                 ret = dlg.exec_()
                 if ret:
                     self.newValue = dlg.authcfg
@@ -399,39 +400,6 @@ class TreeSettingItem(QTreeWidgetItem):
             self.lineEdit.setText(value)
         else:
             self.setText(1, unicode(value))
-
-class QgsAuthConfigSelectDialog(QDialog):
-    """Dialog to select a Authentication config ID from that available in the
-    QGIS Authentication DB. Select can be restricted to that supported by a
-    specified and supported provider.
-    """
-    def __init__(self, parent=None, authcfg=None, provider=None):
-        super(QgsAuthConfigSelectDialog, self).__init__(parent)
-
-        self.authcfg = authcfg
-
-        #self.resize(600, 350)
-        self.setWindowFlags(self.windowFlags() | QtCore.Qt.WindowSystemMenuHint |
-                                                QtCore.Qt.WindowMinMaxButtonsHint)
-        self.setWindowTitle("Authentication config ID selector")
-
-        layout = QVBoxLayout()
-        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        self.editor = QgsAuthConfigSelect(self, dataprovider=provider)
-        self.editor.setConfigId(authcfg)
-        layout.addWidget(self.editor)
-        layout.addWidget(buttonBox)
-        self.setLayout(layout)
-
-        buttonBox.accepted.connect(self.okPressed)
-        buttonBox.rejected.connect(self.cancelPressed)
-
-    def okPressed(self):
-        self.authcfg = self.editor.configId()
-        self.accept()
-
-    def cancelPressed(self):
-        self.reject()
 
 
 class TextEditorDialog(QDialog):
