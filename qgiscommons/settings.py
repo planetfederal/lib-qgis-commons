@@ -14,20 +14,21 @@ BOOL = "bool"
 STRING = "string"
 TEXT = "text" # a multile string
 NUMBER = "number"
-FILE = "file"
+FILES = "files"
 FOLDER = "folder"
 CHOICE  ="choice"
 CRS = "crs"
+AUTHCFG = "authcfg"
 
 def setPluginSetting(name, value, namespace = None):
     '''
     Sets the value of a plugin setting.
 
     :param name: the name of the setting. It is not the full path, but just the last name of it
-    :param value: the value to set for the plugin setting 
-    :param namespace: The namespace. If not passed or None, the namespace will be inferred from 
-    the caller method. Normally, this should not be passed, since it suffices to let this function 
-    find out the plugin from where it is being called, and it will automatically use the 
+    :param value: the value to set for the plugin setting
+    :param namespace: The namespace. If not passed or None, the namespace will be inferred from
+    the caller method. Normally, this should not be passed, since it suffices to let this function
+    find out the plugin from where it is being called, and it will automatically use the
     corresponding plugin namespace
     '''
     namespace = namespace or _callerName().split(".")[0]
@@ -36,13 +37,13 @@ def setPluginSetting(name, value, namespace = None):
 def pluginSetting(name, namespace = None):
     '''
     Returns the value of a plugin setting.
-    
+
     :param name: the name of the setting. It is not the full path, but just the last name of it
-    :param namespace: The namespace. If not passed or None, the namespace will be inferred from 
-    the caller method. Normally, this should not be passed, since it suffices to let this function 
-    find out the plugin from where it is being called, and it will automatically use the 
+    :param namespace: The namespace. If not passed or None, the namespace will be inferred from
+    the caller method. Normally, this should not be passed, since it suffices to let this function
+    find out the plugin from where it is being called, and it will automatically use the
     corresponding plugin namespace
-    '''    
+    '''
     namespace = namespace or _callerName().split(".")[0]
     full_name = namespace + "/" + name
     if QSettings().contains(full_name):
@@ -50,10 +51,10 @@ def pluginSetting(name, namespace = None):
         if isinstance(v, QPyNullVariant):
             v = None
         return v
-    else:        
+    else:
         for setting in _settings[namespace]:
             if setting["name"] == name:
-                return setting["default"]        
+                return setting["default"]
         return None
 
 _settings = {}
@@ -121,13 +122,16 @@ def addSettingsMenu(menuName, parentMenuFunction = None):
 
 
 def removeSettingsMenu(menuName):
+    global _settingActions
     iface.removePluginWebMenu(menuName, _settingActions[menuName])
+    action = _settingActions.pop(menuName, None)
+    action.deleteLater()
 
 def openSettingsDialog(namespace):
     '''
     Opens the settings dialog for the passed namespace.
     Instead of calling this function directly, consider using addSettingsMenu()
-    '''    
+    '''
     dlg = ConfigDialog(namespace)
     dlg.exec_()
 
@@ -205,7 +209,6 @@ class ConfigDialog(QDialog):
 
 
     def _getGroupItem(self, groupName, params):
-        print params
         item = QTreeWidgetItem()
         item.setText(0, groupName)
         icon = QIcon(os.path.join(os.path.dirname(__file__), "setting.png"))
@@ -226,7 +229,7 @@ class ConfigDialog(QDialog):
                     value.saveValue()
                 except WrongValueException:
                     return
-            iterator += 1            
+            iterator += 1
             value = iterator.value()
 
         QDialog.accept(self)
@@ -256,18 +259,34 @@ class TreeSettingItem(QTreeWidgetItem):
              }
             '''
 
-    def _addTextBoxWithLink(self, text, func, editable):
+    def _addTextEdit(self, editable=True):
+        layout = QHBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        self.textEdit = QTextEdit()
+        if not editable:
+            self.textEdit.setReadOnly(True)
+        self.textEdit.setPlainText(self._value)
+        layout.addWidget(self.textEdit)
+        self.newValue = self._value
+        w = QWidget()
+        w.setLayout(layout)
+        self.tree.setItemWidget(self, 1, w)
+
+    def _addTextBoxWithLink(self, text, func, editable=True):
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
         self.lineEdit = QLineEdit()
+        if not editable:
+            self.lineEdit.setReadOnly(True)
         self.lineEdit.setText(self._value)
-        self.linkLabel = QLabel()
-        self.linkLabel.setText("<a href='#'> %s</a>" % text)
-        self.crsLabel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         layout.addWidget(self.lineEdit)
-        layout.addWidget(self.linkLabel)
-        self.newValue = value
-        self.linkLabel.connect(self.label, SIGNAL("linkActivated(QString)"), func)
+        if text:
+            self.linkLabel = QLabel()
+            self.linkLabel.setText("<a href='#'> %s</a>" % text)
+            self.linkLabel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+            layout.addWidget(self.linkLabel)
+            self.linkLabel.linkActivated.connect(func)
+        self.newValue = self._value
         w = QWidget()
         w.setLayout(layout)
         self.tree.setItemWidget(self, 1, w)
@@ -278,6 +297,7 @@ class TreeSettingItem(QTreeWidgetItem):
         self.namespace = namespace
         self.tree = tree
         self._value = value
+        self.newValue = None
         self.name = setting["name"]
         self.labelText = setting["label"]
         self.settingType = setting["type"]
@@ -292,16 +312,16 @@ class TreeSettingItem(QTreeWidgetItem):
                         self.newValue = authId
                         self.lineEdit.setText(authId)
             self._addTextBoxWithLink("Edit", edit, False)
-        elif self.settingType == FILE:
+        elif self.settingType == FILES:
             def edit():
-                f = QFileDialog.getOpenFileNames(None, "Select file", "", "*.*")
+                f = QFileDialog.getOpenFileNames(parent.treeWidget(), "Select file", "", "*.*")
                 if f:
                     self.newValue = f
-                    self.lineEdit.setText(f)
+                    self.lineEdit.setText(",".join(f))
             self._addTextBoxWithLink("Browse", edit, True)
         elif self.settingType == FOLDER:
             def edit():
-                f = QFileDialog.getExistingDirectory(parent, "Select folder", "")
+                f = QFileDialog.getExistingDirectory(parent.treeWidget(), "Select folder", "")
                 if f:
                     self.newValue = f
                     self.lineEdit.setText(f)
@@ -320,15 +340,20 @@ class TreeSettingItem(QTreeWidgetItem):
             idx = self.combo.findText(str(value))
             self.combo.setCurrentIndex(idx)
         elif self.settingType == TEXT:
-            self.label = QLabel()
-            self.label.setText("<a href='#'>Edit</a>")
             self.newValue = value
+            self._addTextEdit()
+        elif self.settingType == STRING:
+            self.newValue = value
+            self._addTextBoxWithLink(None, None)
+        elif self.settingType == AUTHCFG:
             def edit():
-                dlg = TextEditorDialog(unicode(self.newValue))
-                dlg.exec_()
-                self.newValue = dlg.text
-            self.label.connect(self.label, SIGNAL("linkActivated(QString)"), edit)
-            self.tree.setItemWidget(self, 1, self.label)
+                currentAuthCfg = self.value()
+                dlg = QgsAuthConfigSelectDialog(parent.treeWidget(), authcfg=currentAuthCfg)
+                ret = dlg.exec_()
+                if ret:
+                    self.newValue = dlg.authcfg
+                    self.lineEdit.setText(self.newValue)
+            self._addTextBoxWithLink("Select", edit, True)
         else:
             self.setFlags(self.flags() | Qt.ItemIsEditable)
             self.setText(1, unicode(value))
@@ -346,11 +371,13 @@ class TreeSettingItem(QTreeWidgetItem):
                 return self.checkState(1) == Qt.Checked
             elif self.settingType == NUMBER:
                 v = float(self.text(1))
-                return 
+                return
             elif self.settingType == CHOICE:
                 return self.combo.currentText()
-            elif self.settingType in [TEXT, CRS, FILE, FOLDER]:
-                return self.newValue
+            elif self.settingType in [TEXT]:
+                return self.textEdit.toPlainText()
+            elif self.settingType in [CRS, STRING, FILES, FOLDER, AUTHCFG]:
+                return self.lineEdit.text()
             else:
                 return self.text(1)
         except:
@@ -367,13 +394,45 @@ class TreeSettingItem(QTreeWidgetItem):
         elif self.settingType == CHOICE:
             idx = self.combo.findText(str(value))
             self.combo.setCurrentIndex(idx)
-        elif self.settingType == TEXT:
-            self.newValue = value
-        elif self.settingType in [CRS, FILE, FOLDER]:
+        elif self.settingType in [TEXT, CRS, STRING, FILES, FOLDER, AUTHCFG]:
             self.newValue = value
             self.lineEdit.setText(value)
         else:
             self.setText(1, unicode(value))
+
+class QgsAuthConfigSelectDialog(QDialog):
+    """Dialog to select a Authentication config ID from that available in the
+    QGIS Authentication DB. Select can be restricted to that supported by a
+    specified and supported provider.
+    """
+    def __init__(self, parent=None, authcfg=None, provider=None):
+        super(QgsAuthConfigSelectDialog, self).__init__(parent)
+
+        self.authcfg = authcfg
+
+        #self.resize(600, 350)
+        self.setWindowFlags(self.windowFlags() | QtCore.Qt.WindowSystemMenuHint |
+                                                QtCore.Qt.WindowMinMaxButtonsHint)
+        self.setWindowTitle("Authentication config ID selector")
+
+        layout = QVBoxLayout()
+        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        self.editor = QgsAuthConfigSelect(self, dataprovider=provider)
+        self.editor.setConfigId(authcfg)
+        layout.addWidget(self.editor)
+        layout.addWidget(buttonBox)
+        self.setLayout(layout)
+
+        buttonBox.accepted.connect(self.okPressed)
+        buttonBox.rejected.connect(self.cancelPressed)
+
+    def okPressed(self):
+        self.authcfg = self.editor.configId()
+        self.accept()
+
+    def cancelPressed(self):
+        self.reject()
+
 
 class TextEditorDialog(QDialog):
 
@@ -400,7 +459,7 @@ class TextEditorDialog(QDialog):
 
     def okPressed(self):
         self.text = self.editor.toPlainText()
-        self.close()
+        self.accept()
 
     def cancelPressed(self):
-        self.close()
+        self.reject()
