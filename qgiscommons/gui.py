@@ -21,12 +21,12 @@ def addAboutMenu(menuName):
     namespace = _callerPath().split(".")[0]
     path = os.path.join(os.path.dirname(_callerPath()), "metadata.txt")
     aboutIcon = QgsApplication.getThemeIcon('/mActionHelpAPI.png')
-    aboutAction = QAction(settingsIcon, "About...", iface.mainWindow())
+    aboutAction = QAction(aboutIcon, "About...", iface.mainWindow())
     aboutAction.setObjectName(namespace + "about")
     aboutAction.triggered.connect(lambda: openAboutDialog(namespace))
     iface.addPluginToMenu(menuName, settingsAction)
-    global _settingActions
-    _settingActions[menuName] = settingsAction
+    global _aboutActions
+    _aboutActions[menuName] = aboutAction
 
 def removeAboutMenu(menuName):
     iface.removePluginWebMenu(menuName, _aboutActions[menuName])
