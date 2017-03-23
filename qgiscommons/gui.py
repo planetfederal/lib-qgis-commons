@@ -24,7 +24,7 @@ def addAboutMenu(menuName):
     aboutAction = QAction(aboutIcon, "About...", iface.mainWindow())
     aboutAction.setObjectName(namespace + "about")
     aboutAction.triggered.connect(lambda: openAboutDialog(namespace))
-    iface.addPluginToMenu(menuName, settingsAction)
+    iface.addPluginToMenu(menuName, aboutAction)
     global _aboutActions
     _aboutActions[menuName] = aboutAction
 
