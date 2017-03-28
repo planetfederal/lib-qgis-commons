@@ -29,8 +29,13 @@ def addAboutMenu(menuName, parentMenuFunction=None):
     global _aboutActions
     _aboutActions[menuName] = aboutAction
 
-def removeAboutMenu(menuName):
-    iface.removePluginWebMenu(menuName, _aboutActions[menuName])
+def removeAboutMenu(menuName, parentMenuFunction=None):
+    global _aboutActions
+    parentMenuFunction = parentMenuFunction or iface.removePluginMenu
+    parentMenuFunction(menuName, _aboutActions[menuName])
+    action = _aboutActions.pop(menuName, None)
+    action.deleteLater()
+
 
 def openAboutDialog(namespace):
     plugin = plugins.all()[namespace]

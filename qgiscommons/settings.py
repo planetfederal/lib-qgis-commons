@@ -101,7 +101,7 @@ def readSettings():
         _settings[namespace] = json.load(f)
 
 _settingActions = {}
-def addSettingsMenu(menuName, parentMenuFunction = None):
+def addSettingsMenu(menuName, parentMenuFunction=None):
     '''
     Adds a 'open settings...' menu to the plugin menu.
     This method should be called from the initGui() method of the plugin
@@ -122,9 +122,10 @@ def addSettingsMenu(menuName, parentMenuFunction = None):
     _settingActions[menuName] = settingsAction
 
 
-def removeSettingsMenu(menuName):
+def removeSettingsMenu(menuName, parentMenuFunction=None):
     global _settingActions
-    iface.removePluginWebMenu(menuName, _settingActions[menuName])
+    parentMenuFunction = parentMenuFunction or iface.removePluginMenu
+    parentMenuFunction(menuName, _settingActions[menuName])
     action = _settingActions.pop(menuName, None)
     action.deleteLater()
 
