@@ -10,7 +10,7 @@ from PyQt4 import uic
 from pyplugin_installer.installer_data import plugins
 
 _aboutActions = {}
-def addAboutMenu(menuName):
+def addAboutMenu(menuName, parentMenuFunction=None):
     '''
     Adds an 'about...' menu to the plugin menu.
     This method should be called from the initGui() method of the plugin
@@ -18,13 +18,14 @@ def addAboutMenu(menuName):
     :param menuName: The name of the plugin menu in which the about menu is to be added
     '''
 
+    parentMenuFunction = parentMenuFunction or iface.addPluginToMenu
     namespace = _callerPath().split(".")[0]
     path = os.path.join(os.path.dirname(_callerPath()), "metadata.txt")
     aboutIcon = QgsApplication.getThemeIcon('/mActionHelpAPI.png')
     aboutAction = QAction(aboutIcon, "About...", iface.mainWindow())
     aboutAction.setObjectName(namespace + "about")
     aboutAction.triggered.connect(lambda: openAboutDialog(namespace))
-    iface.addPluginToMenu(menuName, aboutAction)
+    parentMenuFunction(menuName, aboutAction)
     global _aboutActions
     _aboutActions[menuName] = aboutAction
 
@@ -36,7 +37,7 @@ def openAboutDialog(namespace):
 
     msg = QMessageBox()
     msg.setIcon(QMessageBox.Information)
-    msg.setText("%s\n\n%s" % (plugin["name"], plugin["description"]))    
+    msg.setText("%s\n\n%s" % (plugin["name"], plugin["description"]))
     msg.setWindowTitle("Plugin info")
     msg.setDetailedText(_pluginDetails(namespace))
     msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
@@ -124,15 +125,15 @@ LAST_PATH = "LAST_PATH"
 
 def askForFiles(parent, msg = None, isSave = False, allowMultiple = False, exts = "*"):
     '''
-    Asks for a file or files, opening the corresponding dialog with the last path that was selected 
-    when this same function was invoked from the calling method. 
+    Asks for a file or files, opening the corresponding dialog with the last path that was selected
+    when this same function was invoked from the calling method.
 
     :param parent: The parent window
     :param msg: The message to use for the dialog title
     :param isSave: true if we are asking for file to save
     :param allowMultiple: True if should allow multiple files to be selected. Ignored if isSave == True
-    :param exts: Extensions to allow in the file dialog. Can be a single string or a list of them. 
-    Use "*" to add an option that allows all files to be selected 
+    :param exts: Extensions to allow in the file dialog. Can be a single string or a list of them.
+    Use "*" to add an option that allows all files to be selected
 
     :returns: A string with the selected filepath or an array of them, depending on whether allowMultiple is True of False
     '''
@@ -167,7 +168,7 @@ def askForFiles(parent, msg = None, isSave = False, allowMultiple = False, exts 
 
 def askForFolder(parent, msg = None):
     '''
-    Asks for a folder, opening the corresponding dialog with the last path that was selected 
+    Asks for a folder, opening the corresponding dialog with the last path that was selected
     when this same function was invoked from the calling method
 
     :param parent: The parent window
@@ -258,4 +259,4 @@ def execute(func, message = None):
                 _dialog.setLabelText(oldText)
         if not waitCursor:
             QtGui.QApplication.restoreOverrideCursor()
-        QtCore.QCoreApplication.processEvents()            
+        QtCore.QCoreApplication.processEvents()
