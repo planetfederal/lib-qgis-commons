@@ -21,8 +21,10 @@ def addAboutMenu(menuName, parentMenuFunction=None):
     parentMenuFunction = parentMenuFunction or iface.addPluginToMenu
     namespace = _callerPath().split(".")[0]
     path = os.path.join(os.path.dirname(_callerPath()), "metadata.txt")
-    aboutIcon = QgsApplication.getThemeIcon('/mActionHelpAPI.png')
-    aboutAction = QAction(aboutIcon, "About...", iface.mainWindow())
+    aboutAction = QAction(
+        QgsApplication.getThemeIcon('/mActionHelpContents.svg'),
+        "About...",
+        iface.mainWindow())
     aboutAction.setObjectName(namespace + "about")
     aboutAction.triggered.connect(lambda: openAboutDialog(namespace))
     parentMenuFunction(menuName, aboutAction)

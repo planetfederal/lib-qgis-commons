@@ -113,8 +113,10 @@ def addSettingsMenu(menuName, parentMenuFunction=None):
 
     parentMenuFunction = parentMenuFunction or iface.addPluginToMenu
     namespace = _callerName().split(".")[0]
-    settingsIcon = QgsApplication.getThemeIcon('/mActionHelpAPI.png')
-    settingsAction = QAction(settingsIcon, "Settings...", iface.mainWindow())
+    settingsAction = QAction(
+        QgsApplication.getThemeIcon('/mActionOptions.svg'),
+        "Settings...",
+        iface.mainWindow())
     settingsAction.setObjectName(namespace + "settings")
     settingsAction.triggered.connect(lambda: openSettingsDialog(namespace))
     parentMenuFunction(menuName, settingsAction)
