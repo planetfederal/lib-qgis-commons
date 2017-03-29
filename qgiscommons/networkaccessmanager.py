@@ -254,10 +254,24 @@ class NetworkAccessManager(object):
             else:
                 self.http_call_result.exception = RequestsException(msg)
         else:
-            ba = self.reply.readAll()
-            txt = QTextStream(ba).readAll()
-            self.http_call_result.text = str(txt)
-            self.http_call_result.ok = True
+            # Handle redirections
+            redirectionUrl = self.reply.attribute(QNetworkRequest.RedirectionTargetAttribute)
+            if redirectionUrl is not None and redirectionUrl != self.reply.url():
+                if redirectionUrl.isRelative():
+                    redirectionUrl = self.reply.url().resolved(redirectionUrl)
+
+                msg = "Redirected from '{}' to '{}'".format(
+                    self.reply.url().toString(), redirectionUrl.toString())
+                self.msg_log(msg)
+
+                self.reply.deleteLater()
+                self.reply = None
+                self.request(redirectionUrl.toString())
+            else:
+                ba = self.reply.readAll()
+                txt = QTextStream(ba).readAll()
+                self.http_call_result.text = str(txt)
+                self.http_call_result.ok = True
 
     @pyqtSlot()
     def sslErrors(self, reply, ssl_errors):
