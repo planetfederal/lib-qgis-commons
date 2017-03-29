@@ -21,7 +21,7 @@ CHOICE  ="choice"
 CRS = "crs"
 AUTHCFG = "authcfg"
 
-_pythonTypes = {NUMBER: float, BOOL, bool}
+_pythonTypes = {NUMBER: float, BOOL: bool}
 
 def setPluginSetting(name, value, namespace = None):
     '''
