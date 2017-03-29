@@ -21,6 +21,8 @@ CHOICE  ="choice"
 CRS = "crs"
 AUTHCFG = "authcfg"
 
+_pythonTypes = {NUMBER: float, BOOL, bool}
+
 def setPluginSetting(name, value, namespace = None):
     '''
     Sets the value of a plugin setting.
@@ -48,9 +50,15 @@ def pluginSetting(name, namespace = None):
     namespace = namespace or _callerName().split(".")[0]
     full_name = namespace + "/" + name
     if QSettings().contains(full_name):
+        pythonType = str
+        for setting in _settings[namespace]:
+            if setting["name"] == name:
+                pythonType = _pythonTypes.get(setting["type"], str)
         v = QSettings().value(full_name, None)
         if isinstance(v, QPyNullVariant):
             v = None
+        else:
+            v = pythonType(v)
         return v
     else:
         for setting in _settings[namespace]:
