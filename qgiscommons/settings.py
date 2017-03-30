@@ -37,7 +37,8 @@ def setPluginSetting(name, value, namespace = None):
     namespace = namespace or _callerName().split(".")[0]
     QSettings().setValue(namespace + "/" + name, value)
 
-def pluginSetting(name, namespace = None):
+
+def pluginSetting(name, namespace=None, typ=None):
     '''
     Returns the value of a plugin setting.
 
@@ -47,28 +48,37 @@ def pluginSetting(name, namespace = None):
     find out the plugin from where it is being called, and it will automatically use the
     corresponding plugin namespace
     '''
+    def _find_in_cache(name, key):
+        for setting in _settings[namespace]:
+            if setting["name"] == name:
+                return setting[key]
+        return None
+
+    def _type_map(t):
+        """Return setting python type"""
+        if t == BOOL:
+            return bool
+        if t == NUMBER:
+            return float
+        if t in [CRS, STRING, FILES, FOLDER, AUTHCFG]:
+            return unicode
+        return None
+
     namespace = namespace or _callerName().split(".")[0]
     full_name = namespace + "/" + name
     if QSettings().contains(full_name):
-        pythonType = str
-        for setting in _settings[namespace]:
-            if setting["name"] == name:
-                pythonType = _pythonTypes.get(setting["type"], str)
-        v = QSettings().value(full_name, None)
+        if typ is None:
+            typ = _type_map(_find_in_cache(name, 'type'))
+        v = QSettings().value(full_name, None, type=typ)
         if isinstance(v, QPyNullVariant):
             v = None
-        else:
-            v = pythonType(v)
         return v
     else:
-        for setting in _settings[namespace]:
-            if setting["name"] == name:
-                return setting["default"]
-        return None
+        return _find_in_cache(name, 'default')
 
 _settings = {}
 
-def readSettings():
+def readSettings(settings_path=None):
     '''
     Reads the settings corresponding to the plugin from where the method is called.
     This function has to be called in the __init__ method of the plugin class.
@@ -104,8 +114,8 @@ def readSettings():
     '''
 
     namespace = _callerName().split(".")[0]
-    path = os.path.join(os.path.dirname(_callerPath()), "settings.json")
-    with open(path) as f:
+    settings_path = settings_path or os.path.join(os.path.dirname(_callerPath()), "settings.json")
+    with open(settings_path) as f:
         _settings[namespace] = json.load(f)
 
 _settingActions = {}
