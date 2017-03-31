@@ -183,10 +183,15 @@ class ConfigDialog(QDialog):
         self.tree = QTreeWidget(self)
         self.tree.setAlternatingRowColors(True)
         self.verticalLayout.addWidget(self.tree)
+        self.horizontalLayout = QHBoxLayout(self)
+        self.resetButton = QPushButton("Reset default values")
+        self.resetButton.clicked.connect(self.resetDefault)
+        self.horizontalLayout.addWidget(self.resetButton)
         self.buttonBox = QDialogButtonBox(self)
         self.buttonBox.setOrientation(Qt.Horizontal)
         self.buttonBox.setStandardButtons(QDialogButtonBox.Cancel|QDialogButtonBox.Ok)
-        self.verticalLayout.addWidget(self.buttonBox)
+        self.horizontalLayout.addWidget(self.buttonBox)
+        self.verticalLayout.addLayout(self.horizontalLayout)
 
         self.setWindowTitle("Configuration options")
         self.searchBox.setToolTip("Enter setting name to filter list")
@@ -196,6 +201,14 @@ class ConfigDialog(QDialog):
         self.buttonBox.accepted.connect(self.accept)
         self.buttonBox.rejected.connect(self.reject)
 
+    def resetDefault(self):
+        root = self.tree.invisibleRootItem()
+        for i in range(root.childCount()):
+            item = root.child(i)
+            for j in range(item.childCount()):
+                subitem = item.child(j)
+                subitem.resetDefault()
+        
 
     def filterTree(self):
         text = unicode(self.searchBox.text())
@@ -319,6 +332,7 @@ class TreeSettingItem(QTreeWidgetItem):
         self.tree = tree
         self._value = value
         self.newValue = None
+        self.setting = setting
         self.name = setting["name"]
         self.labelText = setting["label"]
         self.settingType = setting["type"]
@@ -420,6 +434,9 @@ class TreeSettingItem(QTreeWidgetItem):
             self.lineEdit.setText(value)
         else:
             self.setText(1, unicode(value))
+
+    def resetDefault(self):
+        self.setValue(self.setting["default"])
 
 
 class TextEditorDialog(QDialog):
