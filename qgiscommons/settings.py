@@ -58,11 +58,10 @@ def pluginSetting(name, namespace=None, typ=None):
         """Return setting python type"""
         if t == BOOL:
             return bool
-        if t == NUMBER:
+        elif t == NUMBER:
             return float
-        if t in [CRS, STRING, FILES, FOLDER, AUTHCFG]:
-            return unicode
-        return None
+        else:
+            return unicode        
 
     namespace = namespace or _callerName().split(".")[0]
     full_name = namespace + "/" + name
