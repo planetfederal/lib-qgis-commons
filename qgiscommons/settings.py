@@ -133,7 +133,7 @@ def addSettingsMenu(menuName, parentMenuFunction=None):
     namespace = _callerName().split(".")[0]
     settingsAction = QAction(
         QgsApplication.getThemeIcon('/mActionOptions.svg'),
-        "Settings...",
+        "Plugin Settings...",
         iface.mainWindow())
     settingsAction.setObjectName(namespace + "settings")
     settingsAction.triggered.connect(lambda: openSettingsDialog(namespace))
