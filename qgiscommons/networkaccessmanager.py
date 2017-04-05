@@ -31,7 +31,6 @@ from qgis.PyQt.QtNetwork import QNetworkRequest, QNetworkReply
 
 from qgis.core import QgsNetworkAccessManager, QgsAuthManager, QgsMessageLog
 
-# FIXME: ignored
 DEFAULT_MAX_REDIRECTS = 4
 
 class RequestsException(Exception):
@@ -41,6 +40,9 @@ class RequestsExceptionTimeout(RequestsException):
     pass
 
 class RequestsExceptionConnectionError(RequestsException):
+    pass
+
+class RequestsExceptionRedirectionLimit(RequestsException):
     pass
 
 class Map(dict):
@@ -115,6 +117,8 @@ class NetworkAccessManager(object):
         self.reply = None
         self.debug = debug
         self.exception_class = exception_class
+        self.redirections = 0
+        self.maxRedirections = 0
 
     def msg_log(self, msg):
         if self.debug:
@@ -123,8 +127,9 @@ class NetworkAccessManager(object):
     def request(self, url, method="GET", body=None, headers=None, redirections=DEFAULT_MAX_REDIRECTS, connection_type=None):
         """
         Make a network request by calling QgsNetworkAccessManager.
-        redirections argument is ignored and is here only for httplib2 compatibility.
         """
+        self.redirections = 0
+        self.maxRedirections = redirections
         self.msg_log(u'http_call request: {0}'.format(url))
         self.http_call_result = Response({
             'status': 0,
@@ -257,6 +262,14 @@ class NetworkAccessManager(object):
             # Handle redirections
             redirectionUrl = self.reply.attribute(QNetworkRequest.RedirectionTargetAttribute)
             if redirectionUrl is not None and redirectionUrl != self.reply.url():
+                self.redirections += 1
+                if self.redirections > self.maxRedirections:
+                    msg = "Max redirections limit exceeded."
+                    self.http_call_result.reason = msg
+                    self.http_call_result.ok = False
+                    self.msg_log(msg)
+                    self.http_call_result.exception = RequestsExceptionRedirectionLimit(msg)
+
                 if redirectionUrl.isRelative():
                     redirectionUrl = self.reply.url().resolved(redirectionUrl)
 
