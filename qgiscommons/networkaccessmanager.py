@@ -112,7 +112,7 @@ class NetworkAccessManager(object):
     Usage 2 (No bloking mode)
     -------------------------
     ::
-        NOTE! if blocking mode return immediatly
+        NOTE! if blocking mode returns immediatly
               it's up to the caller to manage listeners in case
               of no blocking mode
 
