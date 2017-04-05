@@ -224,12 +224,17 @@ class NetworkAccessManager(object):
             return (None, None)
 
         # Call and block
-        # Catch all exceptions (and clean up requests)
         self.el = QEventLoop()
+        self.reply.finished.connect(self.el.quit)
+
+        # Catch all exceptions (and clean up requests)
         try:
             self.el.exec_(QEventLoop.ExcludeUserInputEvents)
         except Exception as e:
             raise e
+
+        if self.reply:
+            self.reply.finished.disconnect(self.el.quit)
 
         # fill result
         if not self.http_call_result.ok:
@@ -308,10 +313,6 @@ class NetworkAccessManager(object):
             self.reply = None
         else:
             self.msg_log("Reply was already deleted ...")
-
-        # stop event loop
-        if self.el and self.blockingMode:
-            self.el.quit()
 
     @pyqtSlot()
     def sslErrors(self, reply, ssl_errors):
