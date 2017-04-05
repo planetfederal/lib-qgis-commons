@@ -21,6 +21,8 @@ CHOICE  ="choice"
 CRS = "crs"
 AUTHCFG = "authcfg"
 
+_pythonTypes = {NUMBER: float, BOOL: bool}
+
 def setPluginSetting(name, value, namespace = None):
     '''
     Sets the value of a plugin setting.
@@ -35,7 +37,8 @@ def setPluginSetting(name, value, namespace = None):
     namespace = namespace or _callerName().split(".")[0]
     QSettings().setValue(namespace + "/" + name, value)
 
-def pluginSetting(name, namespace = None):
+
+def pluginSetting(name, namespace=None, typ=None):
     '''
     Returns the value of a plugin setting.
 
@@ -45,22 +48,36 @@ def pluginSetting(name, namespace = None):
     find out the plugin from where it is being called, and it will automatically use the
     corresponding plugin namespace
     '''
+    def _find_in_cache(name, key):
+        for setting in _settings[namespace]:
+            if setting["name"] == name:
+                return setting[key]
+        return None
+
+    def _type_map(t):
+        """Return setting python type"""
+        if t == BOOL:
+            return bool
+        elif t == NUMBER:
+            return float
+        else:
+            return unicode        
+
     namespace = namespace or _callerName().split(".")[0]
     full_name = namespace + "/" + name
     if QSettings().contains(full_name):
-        v = QSettings().value(full_name, None)
+        if typ is None:
+            typ = _type_map(_find_in_cache(name, 'type'))
+        v = QSettings().value(full_name, None, type=typ)
         if isinstance(v, QPyNullVariant):
             v = None
         return v
     else:
-        for setting in _settings[namespace]:
-            if setting["name"] == name:
-                return setting["default"]
-        return None
+        return _find_in_cache(name, 'default')
 
 _settings = {}
 
-def readSettings():
+def readSettings(settings_path=None):
     '''
     Reads the settings corresponding to the plugin from where the method is called.
     This function has to be called in the __init__ method of the plugin class.
@@ -96,12 +113,12 @@ def readSettings():
     '''
 
     namespace = _callerName().split(".")[0]
-    path = os.path.join(os.path.dirname(_callerPath()), "settings.json")
-    with open(path) as f:
+    settings_path = settings_path or os.path.join(os.path.dirname(_callerPath()), "settings.json")
+    with open(settings_path) as f:
         _settings[namespace] = json.load(f)
 
 _settingActions = {}
-def addSettingsMenu(menuName, parentMenuFunction = None):
+def addSettingsMenu(menuName, parentMenuFunction=None):
     '''
     Adds a 'open settings...' menu to the plugin menu.
     This method should be called from the initGui() method of the plugin
@@ -113,8 +130,10 @@ def addSettingsMenu(menuName, parentMenuFunction = None):
 
     parentMenuFunction = parentMenuFunction or iface.addPluginToMenu
     namespace = _callerName().split(".")[0]
-    settingsIcon = QgsApplication.getThemeIcon('/mActionHelpAPI.png')
-    settingsAction = QAction(settingsIcon, "Settings...", iface.mainWindow())
+    settingsAction = QAction(
+        QgsApplication.getThemeIcon('/mActionOptions.svg'),
+        "Plugin Settings...",
+        iface.mainWindow())
     settingsAction.setObjectName(namespace + "settings")
     settingsAction.triggered.connect(lambda: openSettingsDialog(namespace))
     parentMenuFunction(menuName, settingsAction)
@@ -122,9 +141,10 @@ def addSettingsMenu(menuName, parentMenuFunction = None):
     _settingActions[menuName] = settingsAction
 
 
-def removeSettingsMenu(menuName):
+def removeSettingsMenu(menuName, parentMenuFunction=None):
     global _settingActions
-    iface.removePluginWebMenu(menuName, _settingActions[menuName])
+    parentMenuFunction = parentMenuFunction or iface.removePluginMenu
+    parentMenuFunction(menuName, _settingActions[menuName])
     action = _settingActions.pop(menuName, None)
     action.deleteLater()
 
@@ -163,10 +183,15 @@ class ConfigDialog(QDialog):
         self.tree = QTreeWidget(self)
         self.tree.setAlternatingRowColors(True)
         self.verticalLayout.addWidget(self.tree)
+        self.horizontalLayout = QHBoxLayout(self)
+        self.resetButton = QPushButton("Reset default values")
+        self.resetButton.clicked.connect(self.resetDefault)
+        self.horizontalLayout.addWidget(self.resetButton)
         self.buttonBox = QDialogButtonBox(self)
         self.buttonBox.setOrientation(Qt.Horizontal)
         self.buttonBox.setStandardButtons(QDialogButtonBox.Cancel|QDialogButtonBox.Ok)
-        self.verticalLayout.addWidget(self.buttonBox)
+        self.horizontalLayout.addWidget(self.buttonBox)
+        self.verticalLayout.addLayout(self.horizontalLayout)
 
         self.setWindowTitle("Configuration options")
         self.searchBox.setToolTip("Enter setting name to filter list")
@@ -176,6 +201,14 @@ class ConfigDialog(QDialog):
         self.buttonBox.accepted.connect(self.accept)
         self.buttonBox.rejected.connect(self.reject)
 
+    def resetDefault(self):
+        root = self.tree.invisibleRootItem()
+        for i in range(root.childCount()):
+            item = root.child(i)
+            for j in range(item.childCount()):
+                subitem = item.child(j)
+                subitem.resetDefault()
+        
 
     def filterTree(self):
         text = unicode(self.searchBox.text())
@@ -299,6 +332,7 @@ class TreeSettingItem(QTreeWidgetItem):
         self.tree = tree
         self._value = value
         self.newValue = None
+        self.setting = setting
         self.name = setting["name"]
         self.labelText = setting["label"]
         self.settingType = setting["type"]
@@ -400,6 +434,9 @@ class TreeSettingItem(QTreeWidgetItem):
             self.lineEdit.setText(value)
         else:
             self.setText(1, unicode(value))
+
+    def resetDefault(self):
+        self.setValue(self.setting["default"])
 
 
 class TextEditorDialog(QDialog):
