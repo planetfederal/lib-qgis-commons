@@ -129,7 +129,7 @@ class NetworkAccessManager(object):
             'status' - http code result come from reply.attribute(QNetworkRequest.HttpStatusCodeAttribute)
             'status_code' - http code result come from reply.attribute(QNetworkRequest.HttpStatusCodeAttribute)
             'status_message' - reply message string from reply.attribute(QNetworkRequest.HttpReasonPhraseAttribute)
-            'text' - bytearray returned from reply
+            'content' - bytearray returned from reply
             'ok' - request success [True, False]
             'headers' - Dicionary containing the reply header
             'reason' - fomatted message string with reply.errorString()
@@ -148,7 +148,7 @@ class NetworkAccessManager(object):
             'status': 0,
             'status_code': 0,
             'status_message': '',
-            'text' : '',
+            'content' : '',
             'ok': False,
             'headers': {},
             'reason': '',
@@ -242,7 +242,7 @@ class NetworkAccessManager(object):
                 raise self.http_call_result.exception
             else:
                 raise self.exception_class(self.http_call_result.reason)
-        return (self.http_call_result, self.http_call_result.text)
+        return (self.http_call_result, self.http_call_result.content)
 
     @pyqtSlot()
     def downloadProgress(self, bytesReceived, bytesTotal):
@@ -285,7 +285,7 @@ class NetworkAccessManager(object):
             self.msg_log(msg)
 
             ba = self.reply.readAll()
-            self.http_call_result.text = bytes(ba)
+            self.http_call_result.content = bytes(ba)
             self.http_call_result.ok = True
 
         # Let's log the whole response for debugging purposes:
@@ -295,8 +295,8 @@ class NetworkAccessManager(object):
                      self.reply.url().toString()))
         for k, v in list(self.http_call_result.headers.items()):
             self.msg_log("%s: %s" % (k, v))
-        if len(self.http_call_result.text) < 1024:
-            self.msg_log("Payload :\n%s" % self.http_call_result.text)
+        if len(self.http_call_result.content) < 1024:
+            self.msg_log("Payload :\n%s" % self.http_call_result.content)
         else:
             self.msg_log("Payload is > 1 KB ...")
 
