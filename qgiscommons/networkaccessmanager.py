@@ -280,39 +280,55 @@ class NetworkAccessManager(object):
             else:
                 self.http_call_result.exception = RequestsException(msg)
         else:
-            msg = "Network success #{0}".format(self.reply.error())
-            self.http_call_result.reason = msg
-            self.msg_log(msg)
+            # Handle redirections
+            redirectionUrl = self.reply.attribute(QNetworkRequest.RedirectionTargetAttribute)
+            if redirectionUrl is not None and redirectionUrl != self.reply.url():
+                if redirectionUrl.isRelative():
+                    redirectionUrl = self.reply.url().resolved(redirectionUrl)
 
-            ba = self.reply.readAll()
-            self.http_call_result.content = bytes(ba)
-            self.http_call_result.ok = True
+                msg = "Redirected from '{}' to '{}'".format(
+                    self.reply.url().toString(), redirectionUrl.toString())
+                self.msg_log(msg)
 
-        # Let's log the whole response for debugging purposes:
-        self.msg_log("Got response %s %s from %s" % \
-                    (self.http_call_result.status_code,
-                     self.http_call_result.status_message,
-                     self.reply.url().toString()))
-        for k, v in list(self.http_call_result.headers.items()):
-            self.msg_log("%s: %s" % (k, v))
-        if len(self.http_call_result.content) < 1024:
-            self.msg_log("Payload :\n%s" % self.http_call_result.content)
-        else:
-            self.msg_log("Payload is > 1 KB ...")
+                self.reply.deleteLater()
+                self.reply = None
+                self.request(redirectionUrl.toString())
+                
+            # end really request termination
+            else:
+                msg = "Network success #{0}".format(self.reply.error())
+                self.http_call_result.reason = msg
+                self.msg_log(msg)
 
-        # clean reply
-        if self.reply is not None:
-            if self.reply.isRunning():
-                self.reply.close()
-            self.msg_log("Deleting reply ...")
-            # Disconnect all slots
-            self.reply.sslErrors.disconnect(self.sslErrors)
-            self.reply.finished.disconnect(self.replyFinished)
-            self.reply.downloadProgress.disconnect(self.downloadProgress)
-            self.reply.deleteLater()
-            self.reply = None
-        else:
-            self.msg_log("Reply was already deleted ...")
+                ba = self.reply.readAll()
+                self.http_call_result.content = bytes(ba)
+                self.http_call_result.ok = True
+
+                # Let's log the whole response for debugging purposes:
+                self.msg_log("Got response %s %s from %s" % \
+                            (self.http_call_result.status_code,
+                             self.http_call_result.status_message,
+                             self.reply.url().toString()))
+                for k, v in list(self.http_call_result.headers.items()):
+                    self.msg_log("%s: %s" % (k, v))
+                if len(self.http_call_result.content) < 1024:
+                    self.msg_log("Payload :\n%s" % self.http_call_result.content)
+                else:
+                    self.msg_log("Payload is > 1 KB ...")
+
+                # clean reply
+                if self.reply is not None:
+                    if self.reply.isRunning():
+                        self.reply.close()
+                    self.msg_log("Deleting reply ...")
+                    # Disconnect all slots
+                    self.reply.sslErrors.disconnect(self.sslErrors)
+                    self.reply.finished.disconnect(self.replyFinished)
+                    self.reply.downloadProgress.disconnect(self.downloadProgress)
+                    self.reply.deleteLater()
+                    self.reply = None
+                else:
+                    self.msg_log("Reply was already deleted ...")
 
     @pyqtSlot()
     def sslErrors(self, reply, ssl_errors):
