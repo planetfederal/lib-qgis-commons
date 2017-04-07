@@ -1,6 +1,7 @@
 #from future import standard_library
 #standard_library.install_aliases()
 #import unittest
+import unittest
 import tempfile
 import time
 import re
@@ -9,11 +10,19 @@ import signal
 import sip
 import subprocess
 from qgis.testing import (
-    start_app,
-    unittest,
+    start_app
 )
 from utilities import waitServer
-from qgiscommons.networkaccessmanager import NetworkAccessManager, Response, RequestsException
+from qgiscommons.networkaccessmanager import (
+    NetworkAccessManager,
+    Response,
+    RequestsException,
+    RequestsExceptionTimeout,
+    RequestsExceptionConnectionError,
+    RequestsExceptionUserAbort,
+
+)
+from qgis.PyQt.QtCore import QSettings
 
 for c in ('QDate', 'QDateTime', 'QString', 'QTextStream', 'QTime', 'QUrl', 'QVariant'):
     sip.setapi(c, 2)
@@ -40,18 +49,21 @@ get_expected = '''{
 
 class TestNetworkAccessManager(unittest.TestCase):
 
+    timeoutEntry = '/Qgis/networkAndProxy/networkTimeout'
+
     @classmethod
     def setUpClass(cls):
+        # setup network timeout
+        cls.settings = QSettings()
+        cls.settings.setValue(cls.timeoutEntry, 60000)
+        # start httpbin server locally
         cls.server = subprocess.Popen(['gunicorn', 'httpbin:app'],
                                       env=os.environ, stdout=subprocess.PIPE)
-        # wait for server start
-        #time.sleep(1)
-
         cls.port = 8000
         cls.hostname = '127.0.0.1'
         cls.protocol = 'http'
-        # Wait for the server process to start
         cls.serverUrl = '{0}://{1}:{2}'.format(cls.protocol, cls.hostname, cls.port)
+        # Wait for the server process to start
         assert waitServer(cls.serverUrl, timeout=2), "Server is not responding! {}".format(cls.serverUrl)
 
     @classmethod
@@ -102,12 +114,79 @@ class TestNetworkAccessManager(unittest.TestCase):
         self.assertEqual(nam.debug, False)
         self.assertEqual(nam.exception_class, exception_class)
 
-    def test_syncNAM(self):
+    def test_syncNAM_success(self):
         """Test NAM in sync mode."""
+        # test success
         nam = NetworkAccessManager(debug=True)
         (response, content) = nam.request(self.serverUrl+'/get')
+        self.assertTrue(response.ok)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(content, get_expected)
+
+    def test_syncNAM_url_not_found(self):
+        # test Url not found
+        try:
+            nam = NetworkAccessManager(debug=True)
+            (response, content) = nam.request(self.serverUrl+'/somethingwrong')
+        except RequestsException as ex:
+            self.assertTrue('server replied: NOT FOUND' in str(ex))
+        except Exception as ex:
+            raise ex
+
+    def test_syncNAM_local_timeout(self):
+        # test url timeout by client timout
+        self.timeoutOriginal = self.settings.value(self.timeoutEntry)
+        self.settings.setValue(self.timeoutEntry, 1000)
+        try:
+            nam = NetworkAccessManager(debug=True)
+            (response, content) = nam.request(self.serverUrl+'/delay/2')
+        except RequestsException as ex:
+            self.assertTrue('Operation canceled' in str(ex))
+        except Exception as ex:
+            raise ex
+        finally:
+            self.settings.setValue(self.timeoutEntry, self.timeoutOriginal)
+
+    def test_syncNAM_server_timout(self):
+        # test server timout
+        try:
+            nam = NetworkAccessManager(debug=True)
+            (response, content) = nam.request(self.serverUrl+'/status/408')
+        except RequestsException as ex:
+            self.assertTrue('REQUEST TIMEOUT' in str(ex))
+        except Exception as ex:
+            raise ex
+
+    def test_syncNAM_unathorised(self):
+        # connection refused http 401
+        try:
+            nam = NetworkAccessManager(debug=True)
+            (response, content) = nam.request(self.serverUrl+'/status/401')
+        except RequestsException as ex:
+            self.assertTrue('Host requires authentication' in str(ex))
+        except Exception as ex:
+            raise ex
+
+    def test_syncNAM_forbidden(self):
+        # connection refused http 403
+        try:
+            nam = NetworkAccessManager(debug=True)
+            (response, content) = nam.request(self.serverUrl+'/status/401')
+        except RequestsException as ex:
+            self.assertTrue('Host requires authentication' in str(ex))
+        except Exception as ex:
+            raise ex
+
+    def test_syncNAM_redirect(self):
+        # connection redirection
+        try:
+            nam = NetworkAccessManager(debug=True)
+            (response, content) = nam.request(self.serverUrl+'/redirect-to?url=pippo')
+        except RequestsException as ex:
+            self.assertTrue('Host requires authentication' in str(ex))
+        except Exception as ex:
+            raise ex
+
 
 ###############################################################################
 
