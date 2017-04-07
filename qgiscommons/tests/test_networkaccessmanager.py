@@ -24,6 +24,10 @@ from qgiscommons.networkaccessmanager import (
 )
 from qgis.PyQt.QtCore import QSettings
 
+
+# If True, will use http://httpbin.org
+USE_ONLINE_HTTPBIN = os.environ.get('USE_ONLINE_HTTPBIN', False)
+
 for c in ('QDate', 'QDateTime', 'QString', 'QTextStream', 'QTime', 'QUrl', 'QVariant'):
     sip.setapi(c, 2)
 
@@ -56,6 +60,11 @@ class TestNetworkAccessManager(unittest.TestCase):
         # setup network timeout
         cls.settings = QSettings()
         cls.settings.setValue(cls.timeoutEntry, 60000)
+
+        if USE_ONLINE_HTTPBIN:
+            cls.serverUrl = 'https://httpbin.org'
+            return
+
         # start httpbin server locally
         cls.server = subprocess.Popen(['gunicorn', 'httpbin:app'],
                                       env=os.environ, stdout=subprocess.PIPE)
@@ -69,6 +78,7 @@ class TestNetworkAccessManager(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         """Run after all tests"""
+        return
         cls.server.terminate()
         del cls.server
 
@@ -101,8 +111,8 @@ class TestNetworkAccessManager(unittest.TestCase):
         self.assertEqual(nam.debug, True)
         self.assertEqual(nam.exception_class, None)
         self.assertEqual(nam.reply, None)
-        self.assertEqual(nam.onAbort, False)
-        self.assertEqual(nam.blockingMode, False)
+        self.assertEqual(nam.on_abort, False)
+        self.assertEqual(nam.blocking_mode, False)
         self.assertEqual(nam.http_call_result, initValueFor_http_call_result)
 
         # passed values
@@ -137,25 +147,11 @@ class TestNetworkAccessManager(unittest.TestCase):
         # test url timeout by client timout
         self.timeoutOriginal = self.settings.value(self.timeoutEntry)
         self.settings.setValue(self.timeoutEntry, 1000)
-        try:
-            nam = NetworkAccessManager(debug=True)
-            (response, content) = nam.request(self.serverUrl+'/delay/2')
-        except RequestsException as ex:
-            self.assertTrue('Operation canceled' in str(ex))
-        except Exception as ex:
-            raise ex
-        finally:
-            self.settings.setValue(self.timeoutEntry, self.timeoutOriginal)
+        nam = NetworkAccessManager(debug=True)
+        with self.assertRaises(RequestsExceptionTimeout):
+            (response, content) = nam.request(self.serverUrl+'/delay/60')
+        self.settings.setValue(self.timeoutEntry, self.timeoutOriginal)
 
-    def test_syncNAM_server_timout(self):
-        # test server timout
-        try:
-            nam = NetworkAccessManager(debug=True)
-            (response, content) = nam.request(self.serverUrl+'/status/408')
-        except RequestsException as ex:
-            self.assertTrue('REQUEST TIMEOUT' in str(ex))
-        except Exception as ex:
-            raise ex
 
     def test_syncNAM_unathorised(self):
         # connection refused http 401

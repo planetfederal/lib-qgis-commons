@@ -26,7 +26,7 @@ __date__ = 'August 2016'
 
 import urllib.request, urllib.error, urllib.parse
 
-from qgis.PyQt.QtCore import pyqtSlot, QUrl, QEventLoop, QTextStream
+from qgis.PyQt.QtCore import pyqtSlot, QUrl, QEventLoop, QTimer, QCoreApplication
 from qgis.PyQt.QtNetwork import QNetworkRequest, QNetworkReply
 
 from qgis.core import QgsNetworkAccessManager, QgsAuthManager, QgsMessageLog
@@ -142,8 +142,9 @@ class NetworkAccessManager(object):
         self.reply = None
         self.debug = debug
         self.exception_class = exception_class
-        self.onAbort = False
-        self.blockingMode = False
+        self.on_abort = False
+        self.timeout_error = False
+        self.blocking_mode = False
         self.http_call_result = Response({
             'status': 0,
             'status_code': 0,
@@ -169,7 +170,7 @@ class NetworkAccessManager(object):
         """
         self.msg_log(u'http_call request: {0}'.format(url))
 
-        self.blockingMode = blocking
+        self.blocking_mode = blocking
         req = QNetworkRequest()
         # Avoid double quoting form QUrl
         url = urllib.parse.unquote(url)
@@ -200,7 +201,7 @@ class NetworkAccessManager(object):
         # Calling the server ...
         # Let's log the whole call for debugging purposes:
         self.msg_log("Sending %s request to %s" % (method.upper(), req.url().toString()))
-        self.onAbort = False
+        self.on_abort = False
         headers = {str(h): str(req.rawHeader(h)) for h in req.rawHeaderList()}
         for k, v in list(headers.items()):
             self.msg_log("%s: %s" % (k, v))
@@ -214,13 +215,15 @@ class NetworkAccessManager(object):
             self.msg_log("Update reply w/ authid: {0}".format(self.authid))
             QgsAuthManager.instance().updateNetworkReply(self.reply, self.authid)
 
+        QgsNetworkAccessManager.instance().requestTimedOut.connect(self.requestTimedOut)
+
         self.reply.sslErrors.connect(self.sslErrors)
         self.reply.finished.connect(self.replyFinished)
         self.reply.downloadProgress.connect(self.downloadProgress)
 
         # block if blocking mode otherwise return immediatly
         # it's up to the caller to manage listeners in case of no blocking mode
-        if not self.blockingMode:
+        if not self.blocking_mode:
             return (None, None)
 
         # Call and block
@@ -236,6 +239,13 @@ class NetworkAccessManager(object):
         if self.reply:
             self.reply.finished.disconnect(self.el.quit)
 
+        # This is to trap timeout errors, due to QgsNetworkAccessManager calling
+        # abort before emitting requestTimedOut
+        QCoreApplication.processEvents()
+        if self.timeout_error:
+            self.exception_class = RequestsExceptionTimeout
+            self.http_call_result.reason = "Timeout error"
+
         # fill result
         if not self.http_call_result.ok:
             if self.http_call_result.exception and not self.exception_class:
@@ -249,6 +259,11 @@ class NetworkAccessManager(object):
         """Keep track of the download progress"""
         #self.msg_log("downloadProgress %s of %s ..." % (bytesReceived, bytesTotal))
         pass
+
+    @pyqtSlot()
+    def requestTimedOut(self, reply):
+        """Trap the timeout"""
+        self.timeout_error = True
 
     @pyqtSlot()
     def replyFinished(self):
@@ -267,13 +282,13 @@ class NetworkAccessManager(object):
             self.http_call_result.reason = msg
             self.http_call_result.ok = False
             self.msg_log(msg)
-            if err == QNetworkReply.TimeoutError:
+            if err == QNetworkReply.TimeoutError:  # Never happns because QgsNetworkAccessManager calls abort!
                 self.http_call_result.exception = RequestsExceptionTimeout(msg)
             elif err == QNetworkReply.ConnectionRefusedError:
                 self.http_call_result.exception = RequestsExceptionConnectionError(msg)
             elif err == QNetworkReply.OperationCanceledError:
                 # request abort by calling NAM.abort() => cancelled by the user
-                if self.onAbort:
+                if self.on_abort:
                     self.http_call_result.exception = RequestsExceptionUserAbort(msg)
                 else:
                     self.http_call_result.exception = RequestsException(msg)
@@ -293,7 +308,7 @@ class NetworkAccessManager(object):
                 self.reply.deleteLater()
                 self.reply = None
                 self.request(redirectionUrl.toString())
-                
+
             # end really request termination
             else:
                 msg = "Network success #{0}".format(self.reply.error())
@@ -378,5 +393,5 @@ class NetworkAccessManager(object):
         Handle request to cancel HTTP call
         """
         if (self.reply and self.reply.isRunning()):
-            self.onAbort = True
+            self.on_abort = True
             self.reply.abort()
