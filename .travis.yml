@@ -23,6 +23,7 @@ install:
 script:
 - docker exec -it qgis-testing-environment sh -c "qgis_setup.sh $PLUGIN_NAME"
 - docker exec -it qgis-testing-environment sh -c "qgis_testrunner.sh ${PLUGIN_NAME}.tests.settings"
+- docker exec -it qgis-testing-environment sh -c "qgis_testrunner.sh ${PLUGIN_NAME}.tests.oauth2"
 notifications:
   slack:
     rooms:
