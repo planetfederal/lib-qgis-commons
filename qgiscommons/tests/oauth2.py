@@ -73,12 +73,13 @@ class OAuth2Test(unittest.TestCase):
             except:
                 pass
 
-
+    @unittest.skipIf(not oauth2.oauth2_supported(), "OAuth2 not supported")
     def test_create_oauth_authcfg(self):
         """Create an authentication configuration"""
         self.assertEquals(oauth2.setup_oauth('username', 'password', TOKEN_URI, TEST_AUTHCFG_ID, TEST_AUTHCFG_NAME), TEST_AUTHCFG_ID)
 
 
+    @unittest.skipIf(not oauth2.oauth2_supported(), "OAuth2 not supported")
     def test_get_oauth_authcfg(self):
         """Retrieve the OAuth2 authentication configuration"""
         self.assertEquals(oauth2.setup_oauth('username', 'password', TOKEN_URI, TEST_AUTHCFG_ID, TEST_AUTHCFG_NAME), TEST_AUTHCFG_ID)

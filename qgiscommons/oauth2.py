@@ -32,10 +32,6 @@ AUTHCFG_ID = "conect1"  # Standard name for connect OAuth2 configuration
 AUTHCFG_NAME = "Boundless OAuth2 API"
 
 
-class OAuth2UnsupportedException(Exception):
-    """Oauth2 is not supported."""
-    pass
-
 
 def oauth2_supported():
     """Check wether current QGIS installation has all requirements to
