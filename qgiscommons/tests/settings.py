@@ -1,5 +1,6 @@
 import unittest
 import os
+import sys
 import sip
 for c in ('QDate', 'QDateTime', 'QString', 'QTextStream', 'QTime', 'QUrl', 'QVariant'):
     sip.setapi(c, 2)
@@ -25,6 +26,17 @@ class TestSettings(unittest.TestCase):
         self.assertEqual(pluginSetting('mytrueboolsetting'), False)
         setPluginSetting('mytrueboolsetting', True)
         self.assertEqual(pluginSetting('mytrueboolsetting'), True)
+
+
+
+def suite():
+    suite = unittest.makeSuite(TestSettings, 'test')
+    return suite
+
+
+def run_all():
+    unittest.TextTestRunner(verbosity=3, stream=sys.stdout).run(suite())
+
 
 
 if __name__ == '__main__':
