@@ -6,7 +6,7 @@ services:
 - docker
 env:
   global:
-  - PLUGIN_NAME=qgiscommon
+  - PLUGIN_NAME=qgiscommons
   matrix:
   - QGIS_VERSION_TAG=release PYTHON_EXECUTABLE=python PIP_EXECUTABLE=pip
   - QGIS_VERSION_TAG=master_2 PYTHON_EXECUTABLE=python PIP_EXECUTABLE=pip
