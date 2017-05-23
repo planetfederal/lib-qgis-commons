@@ -243,7 +243,7 @@ class NetworkAccessManager(object):
             self.http_call_result.headers[str(k).lower()] = str(v)
         if err != QNetworkReply.NoError:
             msg = "Network error #{0}: {1}".format(
-                self.reply.error(), self.reply.errorString())
+                self.http_call_result.status_code, self.reply.errorString())
             self.http_call_result.reason = msg
             self.http_call_result.ok = False
             self.msg_log(msg)
