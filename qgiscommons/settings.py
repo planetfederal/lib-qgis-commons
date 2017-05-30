@@ -91,6 +91,8 @@ def readSettings(settings_path=None):
      "type": "string",
      "default": "dummy string",
      "group": "Group 1"
+     "onEdit": "def f():\\n\\tprint "Value edited in settings dialog"
+     "onChange": "def f():\\n\\tprint "New settings value has been saved"
     },
     {"name":"anothersetting",
       "label": "Another setting",
@@ -110,6 +112,16 @@ def readSettings(settings_path=None):
     ]
 
     Available types for settings are: string, bool, number, choice, crs and text (a multiline string)
+
+    The onEdit property contains a function that will be executed when the user edits the value 
+    in the settings dialog. It shouldl return false if, after it has been executed, the setting 
+    should not be modified and should recover its original value.
+
+    The onEdit property contains a function that will be executed when the setting is changed after
+    closing the settings dialog, or programatically by callin the setPluginSetting method
+
+    Both onEdit and onChange are optional properties
+
     '''
 
     namespace = _callerName().split(".")[0]
