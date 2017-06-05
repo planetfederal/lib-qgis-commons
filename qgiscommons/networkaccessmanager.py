@@ -43,6 +43,9 @@ class RequestsExceptionTimeout(RequestsException):
 class RequestsExceptionConnectionError(RequestsException):
     pass
 
+class RequestsExceptionUserAbort(RequestsException):
+    pass
+
 class Map(dict):
     """
     Example:
@@ -96,7 +99,7 @@ class NetworkAccessManager(object):
     exception_class : Exception
         Custom exception class
 
-    Usage
+    Usage 1 (bloking mode)
     -----
     ::
         nam = NetworkAccessManager(authcgf)
@@ -106,7 +109,31 @@ class NetworkAccessManager(object):
             # Handle exception
             pass
 
+    Usage 2 (No bloking mode)
+    -------------------------
+    ::
+        NOTE! if blocking mode return immediatly
+              it's up to the caller to manage listeners in case
+              of no blocking mode
 
+        nam = NetworkAccessManager(authcgf)
+        try:
+            nam.request('http://www.example.com', blocking=False)
+            nam.reply.finished.connect(a_signal_listener)
+        except RequestsException, e:
+            # Handle exception
+            pass
+
+        Get response using method:
+        nam.httpResult() that return a dictionary with keys:
+            'status' - http code result come from reply.attribute(QNetworkRequest.HttpStatusCodeAttribute)
+            'status_code' - http code result come from reply.attribute(QNetworkRequest.HttpStatusCodeAttribute)
+            'status_message' - reply message string from reply.attribute(QNetworkRequest.HttpReasonPhraseAttribute)
+            'text' - bytearray returned from reply
+            'ok' - request success [True, False]
+            'headers' - Dicionary containing the reply header
+            'reason' - fomatted message string with reply.errorString()
+            'exception' - the exception returne dduring execution
     """
 
     def __init__(self, authid=None, disable_ssl_certificate_validation=False, exception_class=None, debug=True):
@@ -115,17 +142,8 @@ class NetworkAccessManager(object):
         self.reply = None
         self.debug = debug
         self.exception_class = exception_class
-
-    def msg_log(self, msg):
-        if self.debug:
-            QgsMessageLog.logMessage(msg, "NetworkAccessManager")
-
-    def request(self, url, method="GET", body=None, headers=None, redirections=DEFAULT_MAX_REDIRECTS, connection_type=None):
-        """
-        Make a network request by calling QgsNetworkAccessManager.
-        redirections argument is ignored and is here only for httplib2 compatibility.
-        """
-        self.msg_log(u'http_call request: {0}'.format(url))
+        self.onAbort = False
+        self.blockingMode = False
         self.http_call_result = Response({
             'status': 0,
             'status_code': 0,
@@ -136,6 +154,22 @@ class NetworkAccessManager(object):
             'reason': '',
             'exception': None,
         })
+
+    def msg_log(self, msg):
+        if self.debug:
+            QgsMessageLog.logMessage(msg, "NetworkAccessManager")
+
+    def httpResult(self):
+        return self.http_call_result
+
+    def request(self, url, method="GET", body=None, headers=None, redirections=DEFAULT_MAX_REDIRECTS, connection_type=None, blocking=True):
+        """
+        Make a network request by calling QgsNetworkAccessManager.
+        redirections argument is ignored and is here only for httplib2 compatibility.
+        """
+        self.msg_log(u'http_call request: {0}'.format(url))
+
+        self.blockingMode = blocking
         req = QNetworkRequest()
         # Avoid double quoting form QUrl
         url = urllib.parse.unquote(url)
@@ -166,6 +200,7 @@ class NetworkAccessManager(object):
         # Calling the server ...
         # Let's log the whole call for debugging purposes:
         self.msg_log("Sending %s request to %s" % (method.upper(), req.url().toString()))
+        self.onAbort = False
         headers = {str(h): str(req.rawHeader(h)) for h in req.rawHeaderList()}
         for k, v in list(headers.items()):
             self.msg_log("%s: %s" % (k, v))
@@ -181,42 +216,22 @@ class NetworkAccessManager(object):
 
         self.reply.sslErrors.connect(self.sslErrors)
         self.reply.finished.connect(self.replyFinished)
-
-        # Call and block
-        self.el = QEventLoop()
-        self.reply.finished.connect(self.el.quit)
         self.reply.downloadProgress.connect(self.downloadProgress)
 
+        # block if blocking mode otherwise return immediatly
+        # it's up to the caller to manage listeners in case of no blocking mode
+        if not self.blockingMode:
+            return (None, None)
+
+        # Call and block
         # Catch all exceptions (and clean up requests)
+        self.el = QEventLoop()
         try:
             self.el.exec_(QEventLoop.ExcludeUserInputEvents)
-            # Let's log the whole response for debugging purposes:
-            self.msg_log("Got response %s %s from %s" % \
-                        (self.http_call_result.status_code,
-                         self.http_call_result.status_message,
-                         req.url().toString()))
-            for k, v in list(self.http_call_result.headers.items()):
-                self.msg_log("%s: %s" % (k, v))
-            if len(self.http_call_result.text) < 1024:
-                self.msg_log("Payload :\n%s" % self.http_call_result.text)
-            else:
-                self.msg_log("Payload is > 1 KB ...")
         except Exception as e:
             raise e
-        finally:
-            if self.reply is not None:
-                if self.reply.isRunning():
-                    self.reply.close()
-                self.msg_log("Deleting reply ...")
-                # Disconnect all slots
-                self.reply.sslErrors.disconnect(self.sslErrors)
-                self.reply.finished.disconnect(self.replyFinished)
-                self.reply.finished.disconnect(self.el.quit)
-                self.reply.downloadProgress.disconnect(self.downloadProgress)
-                self.reply.deleteLater()
-                self.reply = None
-            else:
-                self.msg_log("Reply was already deleted ...")
+
+        # fill result
         if not self.http_call_result.ok:
             if self.http_call_result.exception and not self.exception_class:
                 raise self.http_call_result.exception
@@ -251,6 +266,12 @@ class NetworkAccessManager(object):
                 self.http_call_result.exception = RequestsExceptionTimeout(msg)
             elif err == QNetworkReply.ConnectionRefusedError:
                 self.http_call_result.exception = RequestsExceptionConnectionError(msg)
+            elif err == QNetworkReply.OperationCanceledError:
+                # request abort by calling NAM.abort() => cancelled by the user
+                if self.onAbort:
+                    self.http_call_result.exception = RequestsExceptionUserAbort(msg)
+                else:
+                    self.http_call_result.exception = RequestsException(msg)
             else:
                 self.http_call_result.exception = RequestsException(msg)
         else:
@@ -268,10 +289,43 @@ class NetworkAccessManager(object):
                 self.reply = None
                 self.request(redirectionUrl.toString())
             else:
+                msg = "Network success #{0}".format(self.reply.error())
+                self.http_call_result.reason = msg
+                self.msg_log(msg)
+
                 ba = self.reply.readAll()
-                txt = QTextStream(ba).readAll()
-                self.http_call_result.text = str(txt)
+                self.http_call_result.text = bytes(ba)
                 self.http_call_result.ok = True
+
+        # Let's log the whole response for debugging purposes:
+        self.msg_log("Got response %s %s from %s" % \
+                    (self.http_call_result.status_code,
+                     self.http_call_result.status_message,
+                     self.reply.url().toString()))
+        for k, v in list(self.http_call_result.headers.items()):
+            self.msg_log("%s: %s" % (k, v))
+        if len(self.http_call_result.text) < 1024:
+            self.msg_log("Payload :\n%s" % self.http_call_result.text)
+        else:
+            self.msg_log("Payload is > 1 KB ...")
+
+        # clean reply
+        if self.reply is not None:
+            if self.reply.isRunning():
+                self.reply.close()
+            self.msg_log("Deleting reply ...")
+            # Disconnect all slots
+            self.reply.sslErrors.disconnect(self.sslErrors)
+            self.reply.finished.disconnect(self.replyFinished)
+            self.reply.downloadProgress.disconnect(self.downloadProgress)
+            self.reply.deleteLater()
+            self.reply = None
+        else:
+            self.msg_log("Reply was already deleted ...")
+
+        # stop event loop
+        if self.el and self.blockingMode:
+            self.el.quit()
 
     @pyqtSlot()
     def sslErrors(self, reply, ssl_errors):
@@ -284,3 +338,12 @@ class NetworkAccessManager(object):
                 self.msg_log("SSL Error: %s" % v)
         if self.disable_ssl_certificate_validation:
             reply.ignoreSslErrors()
+
+    @pyqtSlot()
+    def abort(self):
+        """
+        Handle request to cancel HTTP call
+        """
+        if (self.reply and self.reply.isRunning()):
+            self.onAbort = True
+            self.reply.abort()
