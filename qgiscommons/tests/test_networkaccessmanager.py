@@ -221,8 +221,8 @@ class TestNetworkAccessManager(unittest.TestCase):
         nam = NetworkAccessManager(debug=True)
         nam.request(self.serverUrl+'/get', blocking=False)
         nam.reply.finished.connect(finishedListener)
-        nam.reply.finished.connect(loop.exit , QtCore.Qt.QueuedConnection)
-        loop.exec_(flags = QtCore.QEventLoop.ExcludeUserInputEvents)
+        nam.reply.finished.connect(loop.exit, QtCore.Qt.QueuedConnection)
+        loop.exec_(flags=QtCore.QEventLoop.ExcludeUserInputEvents)
         if self.checkEx:
             raise self.checkEx
 
@@ -242,8 +242,8 @@ class TestNetworkAccessManager(unittest.TestCase):
         nam = NetworkAccessManager(debug=True)
         nam.request(self.serverUrl+'/somethingwrong', blocking=False)
         nam.reply.finished.connect(finishedListener)
-        nam.reply.finished.connect(loop.exit , QtCore.Qt.QueuedConnection)
-        loop.exec_(flags = QtCore.QEventLoop.ExcludeUserInputEvents)
+        nam.reply.finished.connect(loop.exit, QtCore.Qt.QueuedConnection)
+        loop.exec_(flags=QtCore.QEventLoop.ExcludeUserInputEvents)
         if self.checkEx:
             raise self.checkEx
 

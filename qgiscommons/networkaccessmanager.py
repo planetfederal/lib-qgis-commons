@@ -100,7 +100,7 @@ class NetworkAccessManager(object):
     exception_class : Exception
         Custom exception class
 
-    Usage 1 (bloking mode)
+    Usage 1 (blocking mode)
     -----
     ::
         nam = NetworkAccessManager(authcgf)
@@ -110,7 +110,7 @@ class NetworkAccessManager(object):
             # Handle exception
             pass
 
-    Usage 2 (No bloking mode)
+    Usage 2 (Non blocking mode)
     -------------------------
     ::
         NOTE! if blocking mode returns immediatly
