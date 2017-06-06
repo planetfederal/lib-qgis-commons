@@ -24,6 +24,7 @@ from builtins import object
 __author__ = 'Alessandro Pasotti'
 __date__ = 'August 2016'
 
+import re
 import urllib.request, urllib.error, urllib.parse
 
 from qgis.PyQt.QtCore import pyqtSlot, QUrl, QEventLoop, QTimer, QCoreApplication
@@ -277,12 +278,24 @@ class NetworkAccessManager(object):
             self.http_call_result.headers[str(k)] = str(v)
             self.http_call_result.headers[str(k).lower()] = str(v)
         if err != QNetworkReply.NoError:
-            msg = "Network error #{0}: {1}".format(
-                self.http_call_result.status_code, self.reply.errorString())
+            # check if errorString is empty, if so, then set err string as
+            # reply dump
+            if re.match('(.)*server replied: $', self.reply.errorString()):
+                errString = self.reply.errorString() + self.http_call_result.text
+            else:
+                errString = self.reply.errorString()
+            # check if self.http_call_result.status_code is available (client abort
+            # does not produce http.status_code)
+            if self.http_call_result.status_code:
+                msg = "Network error #{0}: {1}".format(
+                    self.http_call_result.status_code, errString)
+            else:
+                msg = "Network error: {0}".format(errString)
+
             self.http_call_result.reason = msg
             self.http_call_result.ok = False
             self.msg_log(msg)
-            if err == QNetworkReply.TimeoutError:  # Never happns because QgsNetworkAccessManager calls abort!
+            if err == QNetworkReply.TimeoutError:  # Never happens because QgsNetworkAccessManager calls abort!
                 self.http_call_result.exception = RequestsExceptionTimeout(msg)
             elif err == QNetworkReply.ConnectionRefusedError:
                 self.http_call_result.exception = RequestsExceptionConnectionError(msg)
