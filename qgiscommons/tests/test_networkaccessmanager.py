@@ -153,6 +153,21 @@ class TestNetworkAccessManager(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         #self.assertEqual(content, get_expected)
 
+    def test_syncNAM_tiff_success(self):
+        """Test NAM in sync mode with binary files to check for bytearray conversion."""
+        # test success
+        nam = NetworkAccessManager(debug=True)
+        tiff_file =os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data', '1.1.01.tiff')
+        # Online
+        #(response, content) = nam.request("http://sipi.usc.edu/database/download.php?vol=textures&img=1.1.01")
+        # Offline (I tested and they give the same result)
+        (response, content) = nam.request("file://%s" % tiff_file)
+        self.assertTrue(response.ok)
+        # Offline has no status code
+        #self.assertEqual(response.status_code, 200)
+        self.assertEqual(content, open(tiff_file, 'rb').read(), "Image differs")
+
+
     def test_syncNAM_url_not_found(self):
         # test Url not found
         try:
@@ -236,6 +251,31 @@ class TestNetworkAccessManager(unittest.TestCase):
         loop.exec_(flags=QtCore.QEventLoop.ExcludeUserInputEvents)
         if self.checkEx:
             raise self.checkEx
+
+    def test_AsyncNAM_tiff_success(self):
+        """Test NAM in async mode with binary files to check for bytearray conversion."""
+        # test success
+        self.checkEx = None
+        def finishedListener():
+            try:
+                httpResult = nam.httpResult()
+                self.assertTrue(httpResult.ok)
+                # No status code in offline
+                #self.assertEqual(httpResult.status_code, 200)
+                self.assertEqual(httpResult.content, open(tiff_file, 'rb').read(), "Image differs")
+            except Exception as ex:
+                self.checkEx = ex
+
+        loop = QtCore.QEventLoop()
+        tiff_file =os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data', '1.1.01.tiff')
+        nam = NetworkAccessManager(debug=True)
+        (response, content) = nam.request("file://%s" % tiff_file, blocking=False)
+        nam.reply.finished.connect(finishedListener)
+        nam.reply.finished.connect(loop.exit, QtCore.Qt.QueuedConnection)
+        loop.exec_(flags=QtCore.QEventLoop.ExcludeUserInputEvents)
+        if self.checkEx:
+            raise self.checkEx
+
 
     def test_AsyncNAM_url_not_found(self):
         """Test ANAM if it can manages 404"""

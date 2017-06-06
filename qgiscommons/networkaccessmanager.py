@@ -115,7 +115,7 @@ class NetworkAccessManager(object):
     ::
         NOTE! if blocking mode returns immediatly
               it's up to the caller to manage listeners in case
-              of no blocking mode
+              of non blocking mode
 
         nam = NetworkAccessManager(authcgf)
         try:
@@ -280,7 +280,7 @@ class NetworkAccessManager(object):
             # check if errorString is empty, if so, then set err string as
             # reply dump
             if re.match('(.)*server replied: $', self.reply.errorString()):
-                errString = self.reply.errorString() + self.http_call_result.text
+                errString = self.reply.errorString() + self.http_call_result.content
             else:
                 errString = self.reply.errorString()
             # check if self.http_call_result.status_code is available (client abort
@@ -337,7 +337,7 @@ class NetworkAccessManager(object):
                 self.msg_log(msg)
 
                 ba = self.reply.readAll()
-                self.http_call_result.text = bytes(ba)
+                self.http_call_result.content = bytes(ba)
                 self.http_call_result.ok = True
 
         # Let's log the whole response for debugging purposes:
