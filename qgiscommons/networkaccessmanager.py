@@ -144,7 +144,6 @@ class NetworkAccessManager(object):
         self.debug = debug
         self.exception_class = exception_class
         self.on_abort = False
-        self.timeout_error = False
         self.blocking_mode = False
         self.http_call_result = Response({
             'status': 0,
@@ -216,6 +215,8 @@ class NetworkAccessManager(object):
             self.msg_log("Update reply w/ authid: {0}".format(self.authid))
             QgsAuthManager.instance().updateNetworkReply(self.reply, self.authid)
 
+        # necessary to trap local timout manage by QgsNetworkAccessManager
+        # calling QgsNetworkAccessManager::abortRequest
         QgsNetworkAccessManager.instance().requestTimedOut.connect(self.requestTimedOut)
 
         self.reply.sslErrors.connect(self.sslErrors)
@@ -240,19 +241,13 @@ class NetworkAccessManager(object):
         if self.reply:
             self.reply.finished.disconnect(self.el.quit)
 
-        # This is to trap timeout errors, due to QgsNetworkAccessManager calling
-        # abort before emitting requestTimedOut
-        QCoreApplication.processEvents()
-        if self.timeout_error:
-            self.exception_class = RequestsExceptionTimeout
-            self.http_call_result.reason = "Timeout error"
-
-        # fill result
+        # emit exception in case of error
         if not self.http_call_result.ok:
             if self.http_call_result.exception and not self.exception_class:
                 raise self.http_call_result.exception
             else:
                 raise self.exception_class(self.http_call_result.reason)
+
         return (self.http_call_result, self.http_call_result.content)
 
     @pyqtSlot()
@@ -263,8 +258,10 @@ class NetworkAccessManager(object):
 
     @pyqtSlot()
     def requestTimedOut(self, reply):
-        """Trap the timeout"""
-        self.timeout_error = True
+        """Trap the timeout. In Async mode requestTimedOut is called after replyFinished"""
+        # adapt http_call_result basing on receiving qgs timer timout signal 
+        self.exception_class = RequestsExceptionTimeout
+        self.http_call_result.exception = RequestsExceptionTimeout("Timeout error")
 
     @pyqtSlot()
     def replyFinished(self):
@@ -277,7 +274,9 @@ class NetworkAccessManager(object):
         for k, v in self.reply.rawHeaderPairs():
             self.http_call_result.headers[str(k)] = str(v)
             self.http_call_result.headers[str(k).lower()] = str(v)
+
         if err != QNetworkReply.NoError:
+            # handle error
             # check if errorString is empty, if so, then set err string as
             # reply dump
             if re.match('(.)*server replied: $', self.reply.errorString()):
@@ -295,18 +294,27 @@ class NetworkAccessManager(object):
             self.http_call_result.reason = msg
             self.http_call_result.ok = False
             self.msg_log(msg)
-            if err == QNetworkReply.TimeoutError:  # Never happens because QgsNetworkAccessManager calls abort!
+            # set return exception
+            if err == QNetworkReply.TimeoutError:
                 self.http_call_result.exception = RequestsExceptionTimeout(msg)
+
             elif err == QNetworkReply.ConnectionRefusedError:
                 self.http_call_result.exception = RequestsExceptionConnectionError(msg)
+
             elif err == QNetworkReply.OperationCanceledError:
                 # request abort by calling NAM.abort() => cancelled by the user
                 if self.on_abort:
                     self.http_call_result.exception = RequestsExceptionUserAbort(msg)
                 else:
                     self.http_call_result.exception = RequestsException(msg)
+
             else:
                 self.http_call_result.exception = RequestsException(msg)
+
+            # overload exception to the custom exception if available
+            if self.exception_class:
+                self.http_call_result.exception = self.exception_class(msg)
+
         else:
             # Handle redirections
             redirectionUrl = self.reply.attribute(QNetworkRequest.RedirectionTargetAttribute)
@@ -322,7 +330,7 @@ class NetworkAccessManager(object):
                 self.reply = None
                 self.request(redirectionUrl.toString())
 
-            # end really request termination
+            # really end request
             else:
                 msg = "Network success #{0}".format(self.reply.error())
                 self.http_call_result.reason = msg
