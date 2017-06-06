@@ -394,5 +394,5 @@ def run_subset():
 
 
 if __name__ == '__main__':
-    #unittest.main()
-    run_subset()
+    unittest.main()
+    #run_subset()
