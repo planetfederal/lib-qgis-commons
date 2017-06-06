@@ -6,9 +6,11 @@ import tempfile
 import time
 import re
 import os
+import sys
 import signal
 import sip
 import subprocess
+from qgis.PyQt import QtCore
 from qgis.testing import (
     start_app
 )
@@ -35,8 +37,13 @@ QGIS_AUTH_DB_DIR_PATH = tempfile.mkdtemp()
 
 os.environ['QGIS_AUTH_DB_DIR_PATH'] = QGIS_AUTH_DB_DIR_PATH
 
-qgis_app = start_app()
+try:
+    qgis_app = start_app()
+except:
+    # fail in case test is run inside a real qgis
+    pass
 
+# get_expected not used
 get_expected = '''{
   "args": {},
   "headers": {
@@ -54,6 +61,7 @@ get_expected = '''{
 class TestNetworkAccessManager(unittest.TestCase):
 
     timeoutEntry = '/Qgis/networkAndProxy/networkTimeout'
+    server = None
 
     @classmethod
     def setUpClass(cls):
@@ -78,9 +86,10 @@ class TestNetworkAccessManager(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         """Run after all tests"""
-        return
-        cls.server.terminate()
-        del cls.server
+        if cls.server:
+            cls.server.terminate()
+            del cls.server
+            cls.server = None
 
     def setUp(self):
         """Run before each test."""
@@ -131,7 +140,7 @@ class TestNetworkAccessManager(unittest.TestCase):
         (response, content) = nam.request(self.serverUrl+'/get')
         self.assertTrue(response.ok)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(content, get_expected)
+        #self.assertEqual(content, get_expected)
 
     def test_syncNAM_url_not_found(self):
         # test Url not found
@@ -153,6 +162,16 @@ class TestNetworkAccessManager(unittest.TestCase):
         self.settings.setValue(self.timeoutEntry, self.timeoutOriginal)
 
 
+    def test_syncNAM_remote_timeout(self):
+        # test url timeout by client timout
+        self.timeoutOriginal = self.settings.value(self.timeoutEntry)
+        self.settings.setValue(self.timeoutEntry, 60000)
+        nam = NetworkAccessManager(debug=True)
+        with self.assertRaises(RequestsExceptionTimeout):
+            (response, content) = nam.request(self.serverUrl+'/delay/1')
+        self.settings.setValue(self.timeoutEntry, self.timeoutOriginal)
+
+
     def test_syncNAM_unathorised(self):
         # connection refused http 401
         try:
@@ -167,9 +186,9 @@ class TestNetworkAccessManager(unittest.TestCase):
         # connection refused http 403
         try:
             nam = NetworkAccessManager(debug=True)
-            (response, content) = nam.request(self.serverUrl+'/status/401')
+            (response, content) = nam.request(self.serverUrl+'/status/403')
         except RequestsException as ex:
-            self.assertTrue('Host requires authentication' in str(ex))
+            self.assertTrue('server replied: FORBIDDEN' in str(ex))
         except Exception as ex:
             raise ex
 
@@ -177,23 +196,176 @@ class TestNetworkAccessManager(unittest.TestCase):
         # connection redirection
         try:
             nam = NetworkAccessManager(debug=True)
-            (response, content) = nam.request(self.serverUrl+'/redirect-to?url=pippo')
+            (response, content) = nam.request(self.serverUrl+'/redirect-to?url=./status/401')
         except RequestsException as ex:
             self.assertTrue('Host requires authentication' in str(ex))
         except Exception as ex:
             raise ex
 
+    #######################################################
+    #
+    # ASYNC version
+    #
+    #######################################################
+
+    def test_AsyncNAM_success(self):
+        """Test NAM in sync mode."""
+        # test success
+        self.checkEx = None
+        def finishedListener():
+            try:
+                httpResult = nam.httpResult()
+                self.assertTrue(httpResult.ok)
+                self.assertEqual(httpResult.status_code, 200)
+            except Exception as ex:
+                self.checkEx = ex
+
+        loop = QtCore.QEventLoop()
+        nam = NetworkAccessManager(debug=True)
+        nam.request(self.serverUrl+'/get', blocking=False)
+        nam.reply.finished.connect(finishedListener)
+        nam.reply.finished.connect(loop.exit , QtCore.Qt.QueuedConnection)
+        loop.exec_(flags = QtCore.QEventLoop.ExcludeUserInputEvents)
+        if self.checkEx:
+            raise self.checkEx
+
+    def test_AsyncNAM_url_not_found(self):
+        # test Url not found
+        self.checkEx = None
+        def finishedListener():
+            try:
+                httpResult = nam.httpResult()
+                self.assertEqual(httpResult.status_code, 404)
+                self.assertIn('server replied: NOT FOUND', str(httpResult.exception))
+            except Exception as ex:
+                self.checkEx = ex
+
+        loop = QtCore.QEventLoop()
+        nam = NetworkAccessManager(debug=True)
+        nam.request(self.serverUrl+'/somethingwrong', blocking=False)
+        nam.reply.finished.connect(finishedListener)
+        nam.reply.finished.connect(loop.exit , QtCore.Qt.QueuedConnection)
+        loop.exec_(flags = QtCore.QEventLoop.ExcludeUserInputEvents)
+        if self.checkEx:
+            raise self.checkEx
+
+    def test_AsyncNAM_local_timeout(self):
+        # test url timeout by client timout
+        self.checkEx = None
+        def finishedListener():
+            try:
+                httpResult = nam.httpResult()
+                self.assertIn('Operation canceled', str(httpResult.exception))
+                self.assertIsInstance(httpResult.exception, RequestsException)
+            except Exception as ex:
+                self.checkEx = ex
+
+        self.timeoutOriginal = self.settings.value(self.timeoutEntry)
+        self.settings.setValue(self.timeoutEntry, 1000)
+        loop = QtCore.QEventLoop()
+        nam = NetworkAccessManager(debug=True)
+        nam.request(self.serverUrl+'/delay/60', blocking=False)
+        nam.reply.finished.connect(finishedListener)
+        nam.reply.finished.connect(loop.exit , QtCore.Qt.QueuedConnection)
+        loop.exec_(flags = QtCore.QEventLoop.ExcludeUserInputEvents)
+        self.settings.setValue(self.timeoutEntry, self.timeoutOriginal)
+        if self.checkEx:
+            raise self.checkEx
+
+    def test_AsyncNAM_remote_timeout(self):
+        # test url timeout by client timout
+        self.checkEx = None
+        def finishedListener():
+            try:
+                httpResult = nam.httpResult()
+                print httpResult
+                self.assertIn('Operation canceled', str(httpResult.exception))
+                self.assertIsInstance(httpResult.exception, RequestsException)
+            except Exception as ex:
+                self.checkEx = ex
+
+        self.timeoutOriginal = self.settings.value(self.timeoutEntry)
+        self.settings.setValue(self.timeoutEntry, 60000)
+        loop = QtCore.QEventLoop()
+        nam = NetworkAccessManager(debug=True)
+        nam.request(self.serverUrl+'/status/408', blocking=False)
+        nam.reply.finished.connect(finishedListener)
+        nam.reply.finished.connect(loop.exit , QtCore.Qt.QueuedConnection)
+        loop.exec_(flags = QtCore.QEventLoop.ExcludeUserInputEvents)
+        self.settings.setValue(self.timeoutEntry, self.timeoutOriginal)
+        if self.checkEx:
+            raise self.checkEx
+
+    def test_AsyncNAM_unathorised(self):
+        # connection refused http 401
+        self.checkEx = None
+        def finishedListener():
+            try:
+                httpResult = nam.httpResult()
+                self.assertIn('Host requires authentication', str(httpResult.exception))
+                self.assertIsInstance(httpResult.exception, RequestsException)
+            except Exception as ex:
+                self.checkEx = ex
+
+        loop = QtCore.QEventLoop()
+        nam = NetworkAccessManager(debug=True)
+        nam.request(self.serverUrl+'/status/401', blocking=False)
+        nam.reply.finished.connect(finishedListener)
+        nam.reply.finished.connect(loop.exit , QtCore.Qt.QueuedConnection)
+        loop.exec_(flags = QtCore.QEventLoop.ExcludeUserInputEvents)
+        if self.checkEx:
+            raise self.checkEx
+
+    def test_AsyncNAM_forbidden(self):
+        # connection refused http 403
+        self.checkEx = None
+        def finishedListener():
+            try:
+                httpResult = nam.httpResult()
+                self.assertIn('server replied: FORBIDDEN', str(httpResult.exception))
+                self.assertIsInstance(httpResult.exception, RequestsException)
+            except Exception as ex:
+                self.checkEx = ex
+
+        loop = QtCore.QEventLoop()
+        nam = NetworkAccessManager(debug=True)
+        nam.request(self.serverUrl+'/status/403', blocking=False)
+        nam.reply.finished.connect(finishedListener)
+        nam.reply.finished.connect(loop.exit , QtCore.Qt.QueuedConnection)
+        loop.exec_(flags = QtCore.QEventLoop.ExcludeUserInputEvents)
+        if self.checkEx:
+            raise self.checkEx
+
+    def test_AsyncNAM_redirect(self):
+        # connection redirection
+        self.checkEx = None
+        def finishedListener():
+            try:
+                httpResult = nam.httpResult()
+                self.assertIn('Host requires authentication', str(httpResult.exception))
+                self.assertIsInstance(httpResult.exception, RequestsException)
+            except Exception as ex:
+                self.checkEx = ex
+
+        loop = QtCore.QEventLoop()
+        nam = NetworkAccessManager(debug=True)
+        nam.request(self.serverUrl+'/redirect-to?url=./status/401', blocking=False)
+        nam.reply.finished.connect(finishedListener)
+        nam.reply.finished.connect(loop.exit , QtCore.Qt.QueuedConnection)
+        loop.exec_(flags = QtCore.QEventLoop.ExcludeUserInputEvents)
+        if self.checkEx:
+            raise self.checkEx
 
 ###############################################################################
 
 def suiteSubset():
-    tests = ['testOpenWFSLayer']
-    suite = unittest.TestSuite(map(PKIOWSTests, tests))
+    tests = ['test_AsyncNAM_remote_timeout']
+    suite = unittest.TestSuite(map(TestNetworkAccessManager, tests))
     return suite
 
 
 def suite():
-    suite = unittest.makeSuite(PKIOWSTests, 'test')
+    suite = unittest.makeSuite(TestNetworkAccessManager, 'test')
     return suite
 
 
@@ -210,3 +382,4 @@ def run_subset():
 
 if __name__ == '__main__':
     unittest.main()
+    #run_subset()
