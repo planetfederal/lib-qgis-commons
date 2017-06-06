@@ -208,6 +208,13 @@ class TestNetworkAccessManager(unittest.TestCase):
     #
     #######################################################
 
+    def test_AsyncNAM_emptyreturn(self):
+        """Test ANAM return value."""
+        loop = QtCore.QEventLoop()
+        nam = NetworkAccessManager(debug=True)
+        ret = nam.request('anyurl', blocking=False)
+        self.assertEqual(ret, (None, None))
+
     def test_AsyncNAM_success(self):
         """Test ANAM if it can manages success."""
         # test success
