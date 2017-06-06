@@ -162,16 +162,6 @@ class TestNetworkAccessManager(unittest.TestCase):
         self.settings.setValue(self.timeoutEntry, self.timeoutOriginal)
 
 
-    def test_syncNAM_remote_timeout(self):
-        # test url timeout by client timout
-        self.timeoutOriginal = self.settings.value(self.timeoutEntry)
-        self.settings.setValue(self.timeoutEntry, 60000)
-        nam = NetworkAccessManager(debug=True)
-        with self.assertRaises(RequestsExceptionTimeout):
-            (response, content) = nam.request(self.serverUrl+'/status/408')
-        self.settings.setValue(self.timeoutEntry, self.timeoutOriginal)
-
-
     def test_syncNAM_unathorised(self):
         # connection refused http 401
         try:
@@ -264,6 +254,7 @@ class TestNetworkAccessManager(unittest.TestCase):
         def finishedListener():
             try:
                 httpResult = nam.httpResult()
+                print httpResult
                 self.assertIn('Operation canceled', str(httpResult.exception))
                 self.assertIsInstance(httpResult.exception, RequestsException)
             except Exception as ex:
@@ -274,31 +265,6 @@ class TestNetworkAccessManager(unittest.TestCase):
         loop = QtCore.QEventLoop()
         nam = NetworkAccessManager(debug=True)
         nam.request(self.serverUrl+'/delay/60', blocking=False)
-        nam.reply.finished.connect(finishedListener)
-        nam.reply.finished.connect(loop.exit , QtCore.Qt.QueuedConnection)
-        loop.exec_(flags = QtCore.QEventLoop.ExcludeUserInputEvents)
-        self.settings.setValue(self.timeoutEntry, self.timeoutOriginal)
-        if self.checkEx:
-            raise self.checkEx
-
-    def test_AsyncNAM_remote_timeout(self):
-        """Test ANAM if it can manages 408 (server request timout)"""
-        # test url timeout by client timout
-        self.checkEx = None
-        def finishedListener():
-            try:
-                httpResult = nam.httpResult()
-                print httpResult
-                self.assertIn('REQUEST TIMEOUT', str(httpResult.exception))
-                self.assertIsInstance(httpResult.exception, RequestsExceptionTimeout)
-            except Exception as ex:
-                self.checkEx = ex
-
-        self.timeoutOriginal = self.settings.value(self.timeoutEntry)
-        self.settings.setValue(self.timeoutEntry, 60000)
-        loop = QtCore.QEventLoop()
-        nam = NetworkAccessManager(debug=True)
-        nam.request(self.serverUrl+'/status/408', blocking=False)
         nam.reply.finished.connect(finishedListener)
         nam.reply.finished.connect(loop.exit , QtCore.Qt.QueuedConnection)
         loop.exec_(flags = QtCore.QEventLoop.ExcludeUserInputEvents)
