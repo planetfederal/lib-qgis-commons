@@ -369,6 +369,32 @@ class TestNetworkAccessManager(unittest.TestCase):
         if self.checkEx:
             raise self.checkEx
 
+    def test_AsyncNAM_abort(self):
+        """Test ANAM if it can manages abort during connection"""
+        from threading import Timer
+
+        # connection redirection
+        self.checkEx = None
+        def finishedListener():
+            try:
+                httpResult = nam.httpResult()
+                self.assertIn('Operation canceled', str(httpResult.exception))
+                self.assertIsInstance(httpResult.exception, RequestsExceptionUserAbort)
+            except Exception as ex:
+                self.checkEx = ex
+
+        loop = QtCore.QEventLoop()
+        nam = NetworkAccessManager(debug=True)
+        nam.request(self.serverUrl+'/delay/5', blocking=False)
+        nam.reply.finished.connect(finishedListener)
+        nam.reply.finished.connect(loop.exit , QtCore.Qt.QueuedConnection)
+        # abort after 1sec
+        t = Timer(1, nam.abort)
+        t.start()
+        loop.exec_(flags = QtCore.QEventLoop.ExcludeUserInputEvents)
+        if self.checkEx:
+            raise self.checkEx
+
 ###############################################################################
 
 def suiteSubset():
