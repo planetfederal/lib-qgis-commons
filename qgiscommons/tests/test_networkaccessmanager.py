@@ -122,7 +122,7 @@ class TestNetworkAccessManager(unittest.TestCase):
         self.assertEqual(nam.reply, None)
         self.assertEqual(nam.on_abort, False)
         self.assertEqual(nam.blocking_mode, False)
-        self.assertEqual(nam.http_call_result, initValueFor_http_call_result)
+        self.assertEqual(nam.httpResult(), initValueFor_http_call_result)
 
         # passed values
         authid = '1234567'
@@ -209,7 +209,7 @@ class TestNetworkAccessManager(unittest.TestCase):
     #######################################################
 
     def test_AsyncNAM_success(self):
-        """Test NAM in sync mode."""
+        """Test ANAM if it can manages success."""
         # test success
         self.checkEx = None
         def finishedListener():
@@ -230,6 +230,7 @@ class TestNetworkAccessManager(unittest.TestCase):
             raise self.checkEx
 
     def test_AsyncNAM_url_not_found(self):
+        """Test ANAM if it can manages 404"""
         # test Url not found
         self.checkEx = None
         def finishedListener():
@@ -250,6 +251,7 @@ class TestNetworkAccessManager(unittest.TestCase):
             raise self.checkEx
 
     def test_AsyncNAM_local_timeout(self):
+        """Test ANAM if it can manages operation canceled by client"""
         # test url timeout by client timout
         self.checkEx = None
         def finishedListener():
@@ -273,6 +275,7 @@ class TestNetworkAccessManager(unittest.TestCase):
             raise self.checkEx
 
     def test_AsyncNAM_remote_timeout(self):
+        """Test ANAM if it can manages 408 (server request timout)"""
         # test url timeout by client timout
         self.checkEx = None
         def finishedListener():
@@ -297,6 +300,7 @@ class TestNetworkAccessManager(unittest.TestCase):
             raise self.checkEx
 
     def test_AsyncNAM_unathorised(self):
+        """Test ANAM if it can manages 401 (Host requires authentication)"""
         # connection refused http 401
         self.checkEx = None
         def finishedListener():
@@ -317,6 +321,7 @@ class TestNetworkAccessManager(unittest.TestCase):
             raise self.checkEx
 
     def test_AsyncNAM_forbidden(self):
+        """Test ANAM if it can manages 403 (forbidden)"""
         # connection refused http 403
         self.checkEx = None
         def finishedListener():
@@ -337,6 +342,7 @@ class TestNetworkAccessManager(unittest.TestCase):
             raise self.checkEx
 
     def test_AsyncNAM_redirect(self):
+        """Test ANAM if it can manages url redirect"""
         # connection redirection
         self.checkEx = None
         def finishedListener():
@@ -359,7 +365,7 @@ class TestNetworkAccessManager(unittest.TestCase):
 ###############################################################################
 
 def suiteSubset():
-    tests = ['test_AsyncNAM_remote_timeout']
+    tests = ['test_initNAM']
     suite = unittest.TestSuite(map(TestNetworkAccessManager, tests))
     return suite
 
@@ -381,5 +387,5 @@ def run_subset():
 
 
 if __name__ == '__main__':
-    unittest.main()
-    #run_subset()
+    #unittest.main()
+    run_subset()
