@@ -168,7 +168,7 @@ class TestNetworkAccessManager(unittest.TestCase):
         self.settings.setValue(self.timeoutEntry, 60000)
         nam = NetworkAccessManager(debug=True)
         with self.assertRaises(RequestsExceptionTimeout):
-            (response, content) = nam.request(self.serverUrl+'/delay/1')
+            (response, content) = nam.request(self.serverUrl+'/status/408')
         self.settings.setValue(self.timeoutEntry, self.timeoutOriginal)
 
 
@@ -289,8 +289,8 @@ class TestNetworkAccessManager(unittest.TestCase):
             try:
                 httpResult = nam.httpResult()
                 print httpResult
-                self.assertIn('Operation canceled', str(httpResult.exception))
-                self.assertIsInstance(httpResult.exception, RequestsException)
+                self.assertIn('REQUEST TIMEOUT', str(httpResult.exception))
+                self.assertIsInstance(httpResult.exception, RequestsExceptionTimeout)
             except Exception as ex:
                 self.checkEx = ex
 
