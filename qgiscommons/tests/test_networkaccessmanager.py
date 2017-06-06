@@ -10,6 +10,7 @@ import sys
 import signal
 import sip
 import subprocess
+from qgis.core import QgsNetworkAccessManager
 from qgis.PyQt import QtCore
 from qgis.testing import (
     start_app
@@ -133,6 +134,16 @@ class TestNetworkAccessManager(unittest.TestCase):
         self.assertEqual(nam.debug, False)
         self.assertEqual(nam.exception_class, exception_class)
 
+    def test_syncNAM_customException(self):
+        """Test NAM raise custom exception."""
+        # test success
+        class customEx(Exception):
+            pass
+
+        with self.assertRaises(customEx):
+            nam = NetworkAccessManager(debug=True, exception_class=customEx)
+            (response, content) = nam.request(self.serverUrl+'/somethingwrong')
+
     def test_syncNAM_success(self):
         """Test NAM in sync mode."""
         # test success
@@ -248,15 +259,25 @@ class TestNetworkAccessManager(unittest.TestCase):
             raise self.checkEx
 
     def test_AsyncNAM_local_timeout(self):
-        """Test ANAM if it can manages operation canceled by client"""
+        """Test ANAM if it can manages operation canceled by client."""
+        """!!!Note!!! that finishedListener is emitted before than timeoutListener.
+        When timeoutListener is called the httpResult has been changed to notify 
+        timout."""
         # test url timeout by client timout
         self.checkEx = None
         def finishedListener():
             try:
                 httpResult = nam.httpResult()
-                print httpResult
                 self.assertIn('Operation canceled', str(httpResult.exception))
                 self.assertIsInstance(httpResult.exception, RequestsException)
+            except Exception as ex:
+                self.checkEx = ex
+
+        def timeoutListener():
+            try:
+                httpResult = nam.httpResult()
+                self.assertIn('Timeout error', str(httpResult.exception))
+                self.assertIsInstance(httpResult.exception, RequestsExceptionTimeout)
             except Exception as ex:
                 self.checkEx = ex
 
@@ -265,6 +286,7 @@ class TestNetworkAccessManager(unittest.TestCase):
         loop = QtCore.QEventLoop()
         nam = NetworkAccessManager(debug=True)
         nam.request(self.serverUrl+'/delay/60', blocking=False)
+        QgsNetworkAccessManager.instance().requestTimedOut.connect(timeoutListener)
         nam.reply.finished.connect(finishedListener)
         nam.reply.finished.connect(loop.exit , QtCore.Qt.QueuedConnection)
         loop.exec_(flags = QtCore.QEventLoop.ExcludeUserInputEvents)
@@ -357,6 +379,29 @@ class TestNetworkAccessManager(unittest.TestCase):
         # abort after 1sec
         t = Timer(1, nam.abort)
         t.start()
+        loop.exec_(flags = QtCore.QEventLoop.ExcludeUserInputEvents)
+        if self.checkEx:
+            raise self.checkEx
+
+    def test_AsyncNAM_customException(self):
+        """Test ANAM raise curstom exception."""
+        # test success
+        class customEx(Exception):
+            pass
+
+        self.checkEx = None
+        def finishedListener():
+            try:
+                httpResult = nam.httpResult()
+                self.assertIsInstance(httpResult.exception, customEx)
+            except Exception as ex:
+                self.checkEx = ex
+
+        loop = QtCore.QEventLoop()
+        nam = NetworkAccessManager(debug=True, exception_class=customEx)
+        nam.request(self.serverUrl+'/somethingwrong', blocking=False)
+        nam.reply.finished.connect(finishedListener)
+        nam.reply.finished.connect(loop.exit , QtCore.Qt.QueuedConnection)
         loop.exec_(flags = QtCore.QEventLoop.ExcludeUserInputEvents)
         if self.checkEx:
             raise self.checkEx
