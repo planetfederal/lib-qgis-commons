@@ -1,5 +1,5 @@
-from utils import _callerName, _callerPath
-from settings import *
+from qgiscommons.utils import _callerName, _callerPath
+from qgiscommons.settings import *
 from PyQt4 import QtGui, QtCore
 from qgis.core import *
 import inspect
