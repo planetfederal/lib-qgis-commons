@@ -1,5 +1,5 @@
 from utils import _callerName, _callerPath
-from qgiscommons.authconfigselect import AuthConfigSelectDialog
+from qgiscommons.gui.authconfigselect import AuthConfigSelectDialog
 from PyQt4.QtCore import *
 import os
 import json
