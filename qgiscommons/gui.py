@@ -40,15 +40,11 @@ def removeAboutMenu(menuName, parentMenuFunction=None):
 
 
 def openAboutDialog(namespace):
-    plugin = plugins.all()[namespace]
+    dlg = QgsMessageOutput.createMessageOutput()
+    dlg.setTitle("Plugin info")
+    dlg.setMessage(_pluginDetails(namespace), QgsMessageOutput.MessageHtml)
+    dlg.showMessage()
 
-    msg = QMessageBox()
-    msg.setIcon(QMessageBox.Information)
-    msg.setText("%s\n\n%s" % (plugin["name"], plugin["description"]))
-    msg.setWindowTitle("Plugin info")
-    msg.setDetailedText(_pluginDetails(namespace))
-    msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
-    msg.exec_()
 
 def _pluginDetails(namespace):
     plugin = plugins.all()[namespace]
