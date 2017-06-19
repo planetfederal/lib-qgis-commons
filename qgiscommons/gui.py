@@ -19,7 +19,7 @@ def addAboutMenu(menuName, parentMenuFunction=None):
     '''
 
     parentMenuFunction = parentMenuFunction or iface.addPluginToMenu
-    namespace = _callerPath().split(".")[0]
+    namespace = _callerName().split(".")[0]
     path = os.path.join(os.path.dirname(_callerPath()), "metadata.txt")
     aboutAction = QAction(
         QgsApplication.getThemeIcon('/mActionHelpContents.svg'),
