@@ -166,7 +166,7 @@ def openSettingsDialog(namespace):
     Instead of calling this function directly, consider using addSettingsMenu()
     '''
     dlg = ConfigDialog(namespace)
-    dlg.exec_()
+    dlg.show()
 
 #########################################
 
@@ -175,7 +175,7 @@ class ConfigDialog(QDialog):
     def __init__(self, namespace):
         self.settings = _settings[namespace]
         self.namespace = namespace
-        QDialog.__init__(self)
+        QDialog.__init__(self, iface.mainWindow())
         self.setupUi()
         if hasattr(self.searchBox, 'setPlaceholderText'):
             self.searchBox.setPlaceholderText(self.tr("Search..."))
