@@ -210,7 +210,21 @@ class ConfigDialog(QDialog):
         self.tree.headerItem().setText(0, "Setting")
         self.tree.headerItem().setText(1, "Value")
 
-        self.buttonBox.accepted.connect(self.accept)
+        def saveValues():
+            iterator = QTreeWidgetItemIterator(self.tree)
+            value = iterator.value()
+            while value:
+                if hasattr(value, 'saveValue'):
+                    try:
+                        value.saveValue()
+                    except WrongValueException:
+                        return
+                iterator += 1
+                value = iterator.value()
+            QDialog.accept(self)
+            self.close()
+
+        self.buttonBox.accepted.connect(saveValues)
         self.buttonBox.rejected.connect(self.reject)
 
     def resetDefault(self):
@@ -266,19 +280,7 @@ class ConfigDialog(QDialog):
         return item
 
 
-    def accept(self):
-        iterator = QTreeWidgetItemIterator(self.tree)
-        value = iterator.value()
-        while value:
-            if hasattr(value, 'saveValue'):
-                try:
-                    value.saveValue()
-                except WrongValueException:
-                    return
-            iterator += 1
-            value = iterator.value()
 
-        QDialog.accept(self)
 
 
 class WrongValueException(Exception):
