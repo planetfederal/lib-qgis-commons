@@ -4,10 +4,41 @@ from PyQt4 import QtGui, QtCore
 from qgis.core import *
 import inspect
 import os
+import webbrowser
 
 from PyQt4 import uic
 
 from pyplugin_installer.installer_data import plugins
+
+_helpActions = {}
+def addHelpMenu(menuName, parentMenuFunction=None):
+    '''
+    Adds a help menu to the plugin menu.
+    This method should be called from the initGui() method of the plugin
+
+    :param menuName: The name of the plugin menu in which the about menu is to be added.
+    '''
+
+    parentMenuFunction = parentMenuFunction or iface.addPluginToMenu
+    namespace = _callerName().split(".")[0]
+    path = os.path.join(os.path.dirname(_callerPath()), "docs",  "html", "index.html")
+    helpAction = QAction(
+        QgsApplication.getThemeIcon('/mActionHelpContents.svg'),
+        "Plugin help...",
+        iface.mainWindow())
+    helpAction.setObjectName(namespace + "help")
+    helpAction.triggered.connect(lambda: webbrowser.open_new("file://" + path))
+    parentMenuFunction(menuName, helpAction)
+    global _helpActions
+    _helpActions[menuName] = helpAction
+
+def removeHelpMenu(menuName, parentMenuFunction=None):
+    global _helpActions
+    parentMenuFunction = parentMenuFunction or iface.removePluginMenu
+    parentMenuFunction(menuName, _aboutActions[menuName])
+    action = _helpActions.pop(menuName, None)
+    action.deleteLater()
+
 
 _aboutActions = {}
 def addAboutMenu(menuName, parentMenuFunction=None):
@@ -20,7 +51,6 @@ def addAboutMenu(menuName, parentMenuFunction=None):
 
     parentMenuFunction = parentMenuFunction or iface.addPluginToMenu
     namespace = _callerName().split(".")[0]
-    path = os.path.join(os.path.dirname(_callerPath()), "metadata.txt")
     aboutAction = QAction(
         QgsApplication.getThemeIcon('/mActionHelpContents.svg'),
         "About...",
@@ -37,7 +67,6 @@ def removeAboutMenu(menuName, parentMenuFunction=None):
     parentMenuFunction(menuName, _aboutActions[menuName])
     action = _aboutActions.pop(menuName, None)
     action.deleteLater()
-
 
 def openAboutDialog(namespace):
     dlg = QgsMessageOutput.createMessageOutput()
