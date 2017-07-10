@@ -2,6 +2,7 @@ from qgiscommons.utils import _callerName, _callerPath
 from qgiscommons.settings import *
 from PyQt4 import QtGui, QtCore
 from qgis.core import *
+from qgis.utils import iface
 import inspect
 import os
 import webbrowser
@@ -22,7 +23,7 @@ def addHelpMenu(menuName, parentMenuFunction=None):
     parentMenuFunction = parentMenuFunction or iface.addPluginToMenu
     namespace = _callerName().split(".")[0]
     path = os.path.join(os.path.dirname(_callerPath()), "docs",  "html", "index.html")
-    helpAction = QAction(
+    helpAction = QtGui.QAction(
         QgsApplication.getThemeIcon('/mActionHelpContents.svg'),
         "Plugin help...",
         iface.mainWindow())
@@ -51,7 +52,7 @@ def addAboutMenu(menuName, parentMenuFunction=None):
 
     parentMenuFunction = parentMenuFunction or iface.addPluginToMenu
     namespace = _callerName().split(".")[0]
-    aboutAction = QAction(
+    aboutAction = QtGui.QAction(
         QgsApplication.getThemeIcon('/mActionHelpContents.svg'),
         "About...",
         iface.mainWindow())
