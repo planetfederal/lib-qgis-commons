@@ -1,6 +1,5 @@
 from utils import _callerName, _callerPath
 from qgiscommons.gui.authconfigselect import AuthConfigSelectDialog
-from PyQt4.QtCore import *
 import os
 import json
 from collections import defaultdict
@@ -8,6 +7,13 @@ from PyQt4.QtGui import *
 from qgis.core import *
 from qgis.gui import *
 from qgis.utils import iface
+
+try:
+    from qgis.core import QgsSettings
+    _settings = QgsSettings()
+except:
+    from qgis.PyQt.QtCore import QSettings
+    _settings = QSettings()
 
 #Types to use in the settings.json file
 
@@ -35,7 +41,7 @@ def setPluginSetting(name, value, namespace = None):
     corresponding plugin namespace
     '''
     namespace = namespace or _callerName().split(".")[0]
-    QSettings().setValue(namespace + "/" + name, value)
+    _settings.setValue(namespace + "/" + name, value)
 
 
 def pluginSetting(name, namespace=None, typ=None):
@@ -65,10 +71,10 @@ def pluginSetting(name, namespace=None, typ=None):
 
     namespace = namespace or _callerName().split(".")[0]
     full_name = namespace + "/" + name
-    if QSettings().contains(full_name):
+    if _settings.contains(full_name):
         if typ is None:
             typ = _type_map(_find_in_cache(name, 'type'))
-        v = QSettings().value(full_name, None, type=typ)
+        v = _settings.value(full_name, None, type=typ)
         if isinstance(v, QPyNullVariant):
             v = None
         return v
@@ -420,7 +426,7 @@ class TreeSettingItem(QTreeWidgetItem):
                 return self.checkState(1) == Qt.Checked
             elif self.settingType == NUMBER:
                 v = float(self.text(1))
-                return
+                return v
             elif self.settingType == CHOICE:
                 return self.combo.currentText()
             elif self.settingType in [TEXT]:
