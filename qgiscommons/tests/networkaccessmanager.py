@@ -16,7 +16,7 @@ from qgis.testing import (
     start_app
 )
 from utilities import waitServer
-from qgiscommons.networkaccessmanager import (
+from qgiscommons.network.networkaccessmanager import (
     NetworkAccessManager,
     Response,
     RequestsException,
