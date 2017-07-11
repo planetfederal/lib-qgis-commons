@@ -10,10 +10,10 @@ from qgis.utils import iface
 
 try:
     from qgis.core import QgsSettings
-    _settings = QgsSettings()
+    settings = QgsSettings()
 except:
     from qgis.PyQt.QtCore import QSettings
-    _settings = QSettings()
+    settings = QSettings()
 
 #Types to use in the settings.json file
 
@@ -41,7 +41,7 @@ def setPluginSetting(name, value, namespace = None):
     corresponding plugin namespace
     '''
     namespace = namespace or _callerName().split(".")[0]
-    _settings.setValue(namespace + "/" + name, value)
+    settings.setValue(namespace + "/" + name, value)
 
 
 def pluginSetting(name, namespace=None, typ=None):
@@ -71,10 +71,10 @@ def pluginSetting(name, namespace=None, typ=None):
 
     namespace = namespace or _callerName().split(".")[0]
     full_name = namespace + "/" + name
-    if _settings.contains(full_name):
+    if settings.contains(full_name):
         if typ is None:
             typ = _type_map(_find_in_cache(name, 'type'))
-        v = _settings.value(full_name, None, type=typ)
+        v = settings.value(full_name, None, type=typ)
         if isinstance(v, QPyNullVariant):
             v = None
         return v
