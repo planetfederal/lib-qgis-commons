@@ -28,7 +28,7 @@ TEST_AUTHCFG_NAME = "Boundless BCS API OAuth2 - TEST"
 # initialization
 AUTHDBDIR = None
 
-from qgiscommons,network import oauth2
+from qgiscommons.network import oauth2
 from qgis.PyQt.QtCore import QFileInfo, Qt
 from qgis.core import QgsProject, QgsApplication, QgsAuthManager
 
