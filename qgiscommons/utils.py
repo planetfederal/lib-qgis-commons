@@ -1,5 +1,4 @@
 import os
-from PyQt4.QtCore import *
 import inspect
 
 def _callerName():
@@ -15,6 +14,7 @@ def _callerName():
         name.append( codename )
     del parentframe
     return  ".".join(name)
+
 
 def _callerPath():
     stack = inspect.stack()
