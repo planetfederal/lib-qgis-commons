@@ -30,7 +30,7 @@ from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtWidgets import QLineEdit, QToolButton, QStyle
 from qgis.PyQt.QtGui import QIcon
 
-iconsPath = os.path.join(os.path.dirname(__file__), "icons")
+iconsPath = os.path.join(os.path.split(os.path.dirname(__file__))[0], "icons")
 
 
 class PasswordLineEdit(QLineEdit):
