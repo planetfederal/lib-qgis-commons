@@ -25,7 +25,7 @@ def addHelpMenu(menuName, parentMenuFunction=None):
     namespace = _callerName().split(".")[0]
     path = "file://{}".format(os.path.join(os.path.dirname(_callerPath()), "docs",  "html", "index.html"))
     helpAction = QtGui.QAction(
-        QgsApplication.getThemeIcon('/mActionHelpContents.svg'),
+        QgsApplication.getThemeIcon('/mActionHelpAPI.png'),
         "Plugin help...",
         iface.mainWindow())
     helpAction.setObjectName(namespace + "help")
