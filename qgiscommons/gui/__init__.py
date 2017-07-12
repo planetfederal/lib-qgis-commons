@@ -11,6 +11,7 @@ from PyQt4 import uic
 
 from pyplugin_installer.installer_data import plugins
 
+
 _helpActions = {}
 def addHelpMenu(menuName, parentMenuFunction=None):
     '''
@@ -22,16 +23,17 @@ def addHelpMenu(menuName, parentMenuFunction=None):
 
     parentMenuFunction = parentMenuFunction or iface.addPluginToMenu
     namespace = _callerName().split(".")[0]
-    path = os.path.join(os.path.dirname(_callerPath()), "docs",  "html", "index.html")
+    path = "file://{}".format(os.path.join(os.path.dirname(_callerPath()), "docs",  "html", "index.html"))
     helpAction = QtGui.QAction(
-        QgsApplication.getThemeIcon('/mActionHelpContents.svg'),
+        QgsApplication.getThemeIcon('/mActionHelpAPI.png'),
         "Plugin help...",
         iface.mainWindow())
     helpAction.setObjectName(namespace + "help")
-    helpAction.triggered.connect(lambda: webbrowser.open_new("file://" + path))
+    helpAction.triggered.connect(lambda: openHelp(path))
     parentMenuFunction(menuName, helpAction)
     global _helpActions
     _helpActions[menuName] = helpAction
+
 
 def removeHelpMenu(menuName, parentMenuFunction=None):
     global _helpActions
@@ -39,6 +41,13 @@ def removeHelpMenu(menuName, parentMenuFunction=None):
     parentMenuFunction(menuName, _aboutActions[menuName])
     action = _helpActions.pop(menuName, None)
     action.deleteLater()
+
+
+def openHelp(helpPath=None):
+    if helpPath is None:
+        helpPath = os.path.join(os.path.dirname(_callerPath()), "docs", "html", "index.html")
+
+    webbrowser.open_new("file://{}".format(helpPath))
 
 
 _aboutActions = {}
@@ -61,6 +70,7 @@ def addAboutMenu(menuName, parentMenuFunction=None):
     parentMenuFunction(menuName, aboutAction)
     global _aboutActions
     _aboutActions[menuName] = aboutAction
+
 
 def removeAboutMenu(menuName, parentMenuFunction=None):
     global _aboutActions
@@ -138,8 +148,10 @@ def _pluginDetails(namespace):
 
     return html
 
+
 def tr(s):
     return s
+
 
 def loadUi(name):
     if os.path.exists(name):

@@ -1,7 +1,17 @@
 import os
 import re
-from qgis.core import *
-from PyQt4 import QtGui, QtCore
+
+from qgis.PyQt.QtCore import QVariant, QSettings
+from qgis.core import (QGis,
+                       QgsMapLayerRegistry,
+                       QgsField,
+                       QgsFields,
+                       QgsCoordinateReferenceSystem,
+                       QgsVectorLayer,
+                       QgsRasterLayer,
+                       QgsVectorFileWriter
+                      )
+
 
 _layerreg = QgsMapLayerRegistry.instance()
 
@@ -39,10 +49,10 @@ def addLayer(layer, loadInLegend=True):
     return layer
 
 TYPE_MAP = {
-    str: QtCore.QVariant.String,
-    float: QtCore.QVariant.Double,
-    int: QtCore.QVariant.Int,
-    bool: QtCore.QVariant.Bool
+    str: QVariant.String,
+    float: QVariant.Double,
+    int: QVariant.Int,
+    bool: QVariant.Bool
 }
 
 GEOM_TYPE_MAP = {
@@ -57,7 +67,7 @@ GEOM_TYPE_MAP = {
 def _toQgsField(f):
     if isinstance(f, QgsField):
         return f
-    return QgsField(f[0], TYPE_MAP.get(f[1], QtCore.QVariant.String))
+    return QgsField(f[0], TYPE_MAP.get(f[1], QVariant.String))
 
 def _fieldName(f):
     if isinstance(f, basestring):
@@ -78,7 +88,7 @@ def newVectorLayer(filename, fields, geometryType, crs, encoding="utf-8"):
     Creates a new vector layer
 
     :param filename: The filename to store the file. The extensions determines the type of file.
-    If extension is not among the supported ones, a shapefile will be created and the file will 
+    If extension is not among the supported ones, a shapefile will be created and the file will
     get an added '.shp' to its path.
     If the filename is None, a memory layer will be created
 
@@ -134,6 +144,7 @@ def newVectorLayer(filename, fields, geometryType, crs, encoding="utf-8"):
 def createWmsLayer(url, layer, style, crs):
     pass
 
+
 def createWfsLayer(url, layer, crs):
     pass
 
@@ -148,6 +159,7 @@ def layerFromName(name):
     for layer in layers:
         if layer.name() == name:
             return layer
+
 
 def loadLayer(filename, name = None):
     '''
@@ -167,18 +179,20 @@ def loadLayer(filename, name = None):
 
     return qgslayer
 
+
 def loadLayerNoCrsDialog(filename, name=None):
     '''
     Tries to load a layer from the given file
-    Same as the loadLayer method, but it does not ask for CRS, regardless of current 
+    Same as the loadLayer method, but it does not ask for CRS, regardless of current
     configuration in QGIS settings
     '''
-    settings = QTCore.QSettings()
+    settings = QSettings()
     prjSetting = settings.value('/Projections/defaultBehaviour')
     settings.setValue('/Projections/defaultBehaviour', '')
     layer = load_layer(filename, name)
     settings.setValue('/Projections/defaultBehaviour', prjSetting)
     return layer
+
 
 def loadVector(path, name=None, provider="ogr"):
     """
@@ -192,4 +206,3 @@ def loadVector(path, name=None, provider="ogr"):
         name = os.path.basename(path)
     layer = QgsVectorLayer(path, name, provider)
     return layer
-
