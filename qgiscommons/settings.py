@@ -4,6 +4,7 @@ import os
 import json
 from collections import defaultdict
 from PyQt4.QtGui import *
+from PyQt4.QtCore import QPyNullVariant
 from qgis.core import *
 from qgis.gui import *
 from qgis.utils import iface
