@@ -1,39 +1,13 @@
+from utils import _callerName, _callerPath
+from qgiscommons.authconfigselect import AuthConfigSelectDialog
+from PyQt4.QtCore import *
 import os
 import json
 from collections import defaultdict
-
-from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtCore import QPyNullVariant, Qt
-from qgis.PyQt.QtWidgets import (QAction,
-                                 QDialog,
-                                 QVBoxLayout,
-                                 QHBoxLayout,
-                                 QTreeWidget,
-                                 QPushButton,
-                                 QDialogButtonBox,
-                                 QTreeWidgetItem,
-                                 QTreeWidgetItemIterator,
-                                 QTextEdit,
-                                 QWidget,
-                                 QLineEdit,
-                                 QSizePolicy,
-                                 QFileDialog,
-                                 QComboBox,
-
-                                )
-from qgis.core import QgsApplication
-from qgis.gui import QgsFilterLineEdit, QgsGenericProjectionSelector
+from PyQt4.QtGui import *
+from qgis.core import *
+from qgis.gui import *
 from qgis.utils import iface
-
-from qgiscommons.utils import _callerName, _callerPath
-from qgiscommons.gui.authconfigselect import AuthConfigSelectDialog
-
-try:
-    from qgis.core import QgsSettings
-    settings = QgsSettings()
-except:
-    from qgis.PyQt.QtCore import QSettings
-    settings = QSettings()
 
 #Types to use in the settings.json file
 
@@ -61,7 +35,7 @@ def setPluginSetting(name, value, namespace = None):
     corresponding plugin namespace
     '''
     namespace = namespace or _callerName().split(".")[0]
-    settings.setValue(namespace + "/" + name, value)
+    QSettings().setValue(namespace + "/" + name, value)
 
 
 def pluginSetting(name, namespace=None, typ=None):
@@ -87,22 +61,22 @@ def pluginSetting(name, namespace=None, typ=None):
         elif t == NUMBER:
             return float
         else:
-            return unicode
+            return unicode        
 
     namespace = namespace or _callerName().split(".")[0]
     full_name = namespace + "/" + name
-    if settings.contains(full_name):
+    if QSettings().contains(full_name):
         if typ is None:
             typ = _type_map(_find_in_cache(name, 'type'))
-        v = settings.value(full_name, None, type=typ)
+        v = QSettings().value(full_name, None, type=typ)
         if isinstance(v, QPyNullVariant):
             v = None
         return v
     else:
         return _find_in_cache(name, 'default')
 
-
 _settings = {}
+
 def readSettings(settings_path=None):
     '''
     Reads the settings corresponding to the plugin from where the method is called.
@@ -139,8 +113,8 @@ def readSettings(settings_path=None):
 
     Available types for settings are: string, bool, number, choice, crs and text (a multiline string)
 
-    The onEdit property contains a function that will be executed when the user edits the value
-    in the settings dialog. It shouldl return false if, after it has been executed, the setting
+    The onEdit property contains a function that will be executed when the user edits the value 
+    in the settings dialog. It shouldl return false if, after it has been executed, the setting 
     should not be modified and should recover its original value.
 
     The onEdit property contains a function that will be executed when the setting is changed after
@@ -154,7 +128,6 @@ def readSettings(settings_path=None):
     settings_path = settings_path or os.path.join(os.path.dirname(_callerPath()), "settings.json")
     with open(settings_path) as f:
         _settings[namespace] = json.load(f)
-
 
 _settingActions = {}
 def addSettingsMenu(menuName, parentMenuFunction=None):
@@ -186,7 +159,6 @@ def removeSettingsMenu(menuName, parentMenuFunction=None):
     parentMenuFunction(menuName, _settingActions[menuName])
     action = _settingActions.pop(menuName, None)
     action.deleteLater()
-
 
 def openSettingsDialog(namespace):
     '''
@@ -262,6 +234,7 @@ class ConfigDialog(QDialog):
             for j in range(item.childCount()):
                 subitem = item.child(j)
                 subitem.resetDefault()
+        
 
     def filterTree(self):
         text = unicode(self.searchBox.text())
@@ -294,6 +267,7 @@ class ConfigDialog(QDialog):
 
         self.tree.setColumnWidth(0, 400)
 
+
     def _getGroupItem(self, groupName, params):
         item = QTreeWidgetItem()
         item.setText(0, groupName)
@@ -308,9 +282,9 @@ class ConfigDialog(QDialog):
 
 
 
+
 class WrongValueException(Exception):
     pass
-
 
 class TreeSettingItem(QTreeWidgetItem):
 
@@ -433,6 +407,7 @@ class TreeSettingItem(QTreeWidgetItem):
             self.setFlags(self.flags() | Qt.ItemIsEditable)
             self.setText(1, unicode(value))
 
+
     def saveValue(self):
         value = self.value()
         setPluginSetting(self.name, value, self.namespace)
@@ -445,7 +420,7 @@ class TreeSettingItem(QTreeWidgetItem):
                 return self.checkState(1) == Qt.Checked
             elif self.settingType == NUMBER:
                 v = float(self.text(1))
-                return v
+                return
             elif self.settingType == CHOICE:
                 return self.combo.currentText()
             elif self.settingType in [TEXT]:
@@ -486,8 +461,8 @@ class TextEditorDialog(QDialog):
         self.text = text
 
         self.resize(600, 350)
-        self.setWindowFlags(self.windowFlags() | Qt.WindowSystemMenuHint |
-                                                 Qt.WindowMinMaxButtonsHint)
+        self.setWindowFlags(self.windowFlags() | QtCore.Qt.WindowSystemMenuHint |
+                                                QtCore.Qt.WindowMinMaxButtonsHint)
         self.setWindowTitle("Editor")
 
         layout = QVBoxLayout()

@@ -1,49 +1,13 @@
-from qgiscommons.utils import _callerName, _callerPath, pluginDetails
-from qgiscommons.settings import *
-from PyQt4 import QtGui, QtCore, uic
+from utils import _callerName, _callerPath
+from settings import *
+from PyQt4 import QtGui, QtCore
 from qgis.core import *
-from qgis.utils import iface
 import inspect
 import os
-import webbrowser
 
-_helpActions = {}
-def addHelpMenu(menuName, parentMenuFunction=None):
-    '''
-    Adds a help menu to the plugin menu.
-    This method should be called from the initGui() method of the plugin
+from PyQt4 import uic
 
-    :param menuName: The name of the plugin menu in which the about menu is to be added.
-    '''
-
-    parentMenuFunction = parentMenuFunction or iface.addPluginToMenu
-    namespace = _callerName().split(".")[0]
-    path = "file://{}".format(os.path.join(os.path.dirname(_callerPath()), "docs",  "html", "index.html"))
-    helpAction = QtGui.QAction(
-        QgsApplication.getThemeIcon('/mActionHelpAPI.png'),
-        "Plugin help...",
-        iface.mainWindow())
-    helpAction.setObjectName(namespace + "help")
-    helpAction.triggered.connect(lambda: openHelp(path))
-    parentMenuFunction(menuName, helpAction)
-    global _helpActions
-    _helpActions[menuName] = helpAction
-
-
-def removeHelpMenu(menuName, parentMenuFunction=None):
-    global _helpActions
-    parentMenuFunction = parentMenuFunction or iface.removePluginMenu
-    parentMenuFunction(menuName, _aboutActions[menuName])
-    action = _helpActions.pop(menuName, None)
-    action.deleteLater()
-
-
-def openHelp(helpPath=None):
-    if helpPath is None:
-        helpPath = os.path.join(os.path.dirname(_callerPath()), "docs", "html", "index.html")
-
-    webbrowser.open_new("file://{}".format(helpPath))
-
+from pyplugin_installer.installer_data import plugins
 
 _aboutActions = {}
 def addAboutMenu(menuName, parentMenuFunction=None):
@@ -56,7 +20,8 @@ def addAboutMenu(menuName, parentMenuFunction=None):
 
     parentMenuFunction = parentMenuFunction or iface.addPluginToMenu
     namespace = _callerName().split(".")[0]
-    aboutAction = QtGui.QAction(
+    path = os.path.join(os.path.dirname(_callerPath()), "metadata.txt")
+    aboutAction = QAction(
         QgsApplication.getThemeIcon('/mActionHelpContents.svg'),
         "About...",
         iface.mainWindow())
@@ -66,7 +31,6 @@ def addAboutMenu(menuName, parentMenuFunction=None):
     global _aboutActions
     _aboutActions[menuName] = aboutAction
 
-
 def removeAboutMenu(menuName, parentMenuFunction=None):
     global _aboutActions
     parentMenuFunction = parentMenuFunction or iface.removePluginMenu
@@ -74,12 +38,78 @@ def removeAboutMenu(menuName, parentMenuFunction=None):
     action = _aboutActions.pop(menuName, None)
     action.deleteLater()
 
+
 def openAboutDialog(namespace):
     dlg = QgsMessageOutput.createMessageOutput()
     dlg.setTitle("Plugin info")
-    dlg.setMessage(pluginDetails(namespace), QgsMessageOutput.MessageHtml)
+    dlg.setMessage(_pluginDetails(namespace), QgsMessageOutput.MessageHtml)
     dlg.showMessage()
 
+
+def _pluginDetails(namespace):
+    plugin = plugins.all()[namespace]
+    html = '<style>body, table {padding:0px; margin:0px; font-family:verdana; font-size: 1.1em;}</style>'
+    html += '<body>'
+    html += '<table cellspacing="4" width="100%"><tr><td>'
+    html += '<h1>{}</h1>'.format(plugin['name'])
+    html += '<h3>{}</h3>'.format(plugin['description'])
+
+    if plugin['about'] != '':
+        html += plugin['about'].replace('\n', '<br/>')
+
+    html += '<br/><br/>'
+
+    if plugin['category'] != '':
+        html += '{}: {} <br/>'.format(tr('Category'), plugin['category'])
+
+    if plugin['tags'] != '':
+        html += '{}: {} <br/>'.format(tr('Tags'), plugin['tags'])
+
+    if plugin['homepage'] != '' or plugin['tracker'] != '' or plugin['code_repository'] != '':
+        html += tr('More info:')
+
+        if plugin['homepage'] != '':
+            html += '<a href="{}">{}</a> &nbsp;'.format(plugin['homepage'], tr('homepage') )
+
+        if plugin['tracker'] != '':
+            html += '<a href="{}">{}</a> &nbsp;'.format(plugin['tracker'], tr('bug_tracker') )
+
+        if plugin['code_repository'] != '':
+            html += '<a href="{}">{}</a> &nbsp;'.format(plugin['code_repository'], tr('code_repository') )
+
+        html += '<br/>'
+
+    html += '<br/>'
+
+    if plugin['author_email'] != '':
+        html += '{}: <a href="mailto:{}">{}</a>'.format(tr('Author'), plugin['author_email'], plugin['author_name'])
+        html += '<br/><br/>'
+    elif plugin['author_name'] != '':
+        html += '{}: {}'.format(tr('Author'), plugin['author_name'])
+        html += '<br/><br/>'
+
+    if plugin['version_installed'] != '':
+        ver = plugin['version_installed']
+        if ver == '-1':
+            ver = '?'
+
+        html += tr('Installed version: {} (in {})<br/>'.format(ver, plugin['library']))
+
+    if plugin['version_available'] != '':
+        html += tr('Available version: {} (in {})<br/>'.format(plugin['version_available'], plugin['zip_repository']))
+
+    if plugin['changelog'] != '':
+        html += '<br/>'
+        changelog = tr('Changelog:<br/>{} <br/>'.format(plugin['changelog']))
+        html += changelog.replace('\n', '<br/>')
+
+    html += '</td></tr></table>'
+    html += '</body>'
+
+    return html
+
+def tr(s):
+    return s
 
 def loadUi(name):
     if os.path.exists(name):
