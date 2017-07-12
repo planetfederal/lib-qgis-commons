@@ -11,6 +11,7 @@ from PyQt4 import uic
 
 from pyplugin_installer.installer_data import plugins
 
+
 _helpActions = {}
 def addHelpMenu(menuName, parentMenuFunction=None):
     '''
@@ -33,6 +34,7 @@ def addHelpMenu(menuName, parentMenuFunction=None):
     global _helpActions
     _helpActions[menuName] = helpAction
 
+
 def removeHelpMenu(menuName, parentMenuFunction=None):
     global _helpActions
     parentMenuFunction = parentMenuFunction or iface.removePluginMenu
@@ -40,6 +42,12 @@ def removeHelpMenu(menuName, parentMenuFunction=None):
     action = _helpActions.pop(menuName, None)
     action.deleteLater()
 
+
+def openHelp(helpPath=None):
+    if helpPath is None:
+        helpPath = os.path.join(os.path.dirname(_callerPath()), "docs", "html", "index.html")
+
+    webbrowser.open_new("file://{}".format(helpPath))
 
 _aboutActions = {}
 def addAboutMenu(menuName, parentMenuFunction=None):
