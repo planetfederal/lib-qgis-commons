@@ -23,13 +23,13 @@ def addHelpMenu(menuName, parentMenuFunction=None):
 
     parentMenuFunction = parentMenuFunction or iface.addPluginToMenu
     namespace = _callerName().split(".")[0]
-    path = os.path.join(os.path.dirname(_callerPath()), "docs",  "html", "index.html")
+    path = "file://{}".format(os.path.join(os.path.dirname(_callerPath()), "docs",  "html", "index.html"))
     helpAction = QtGui.QAction(
         QgsApplication.getThemeIcon('/mActionHelpContents.svg'),
         "Plugin help...",
         iface.mainWindow())
     helpAction.setObjectName(namespace + "help")
-    helpAction.triggered.connect(lambda: webbrowser.open_new("file://" + path))
+    helpAction.triggered.connect(lambda: openHelp(path))
     parentMenuFunction(menuName, helpAction)
     global _helpActions
     _helpActions[menuName] = helpAction
@@ -48,6 +48,7 @@ def openHelp(helpPath=None):
         helpPath = os.path.join(os.path.dirname(_callerPath()), "docs", "html", "index.html")
 
     webbrowser.open_new("file://{}".format(helpPath))
+
 
 _aboutActions = {}
 def addAboutMenu(menuName, parentMenuFunction=None):
@@ -70,12 +71,14 @@ def addAboutMenu(menuName, parentMenuFunction=None):
     global _aboutActions
     _aboutActions[menuName] = aboutAction
 
+
 def removeAboutMenu(menuName, parentMenuFunction=None):
     global _aboutActions
     parentMenuFunction = parentMenuFunction or iface.removePluginMenu
     parentMenuFunction(menuName, _aboutActions[menuName])
     action = _aboutActions.pop(menuName, None)
     action.deleteLater()
+
 
 def openAboutDialog(namespace):
     plugin = plugins.all()[namespace]
@@ -150,8 +153,10 @@ def _pluginDetails(namespace):
 
     return html
 
+
 def tr(s):
     return s
+
 
 def loadUi(name):
     if os.path.exists(name):
