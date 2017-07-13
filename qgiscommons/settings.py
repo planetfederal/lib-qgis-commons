@@ -41,6 +41,7 @@ BOOL = "bool"
 STRING = "string"
 TEXT = "text" # a multile string
 NUMBER = "number"
+FILE = "file"
 FILES = "files"
 FOLDER = "folder"
 CHOICE  ="choice"
@@ -341,7 +342,6 @@ class TreeSettingItem(QTreeWidgetItem):
             self.textEdit.setReadOnly(True)
         self.textEdit.setPlainText(self._value)
         layout.addWidget(self.textEdit)
-        self.newValue = self._value
         w = QWidget()
         w.setLayout(layout)
         self.tree.setItemWidget(self, 1, w)
@@ -360,7 +360,6 @@ class TreeSettingItem(QTreeWidgetItem):
             self.linkLabel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
             layout.addWidget(self.linkLabel)
             self.linkLabel.linkActivated.connect(func)
-        self.newValue = self._value
         w = QWidget()
         w.setLayout(layout)
         self.tree.setItemWidget(self, 1, w)
@@ -371,7 +370,6 @@ class TreeSettingItem(QTreeWidgetItem):
         self.namespace = namespace
         self.tree = tree
         self._value = value
-        self.newValue = None
         self.setting = setting
         self.name = setting["name"]
         self.labelText = setting["label"]
@@ -384,21 +382,24 @@ class TreeSettingItem(QTreeWidgetItem):
                 if selector.exec_():
                     authId = selector.selectedAuthId()
                     if authId.upper().startswith("EPSG:"):
-                        self.newValue = authId
                         self.lineEdit.setText(authId)
             self._addTextBoxWithLink("Edit", edit, False)
         elif self.settingType == FILES:
             def edit():
                 f = QFileDialog.getOpenFileNames(parent.treeWidget(), "Select file", "", "*.*")
                 if f:
-                    self.newValue = f
                     self.lineEdit.setText(",".join(f))
             self._addTextBoxWithLink("Browse", edit, True)
+        elif self.settingType == FILE:
+            def edit():
+                f = QFileDialog.getOpenFileName(parent.treeWidget(), "Select file", "", "*.*")
+                if f:
+                    self.lineEdit.setText(f)
+            self._addTextBoxWithLink("Browse", edit, True)            
         elif self.settingType == FOLDER:
             def edit():
                 f = QFileDialog.getExistingDirectory(parent.treeWidget(), "Select folder", "")
                 if f:
-                    self.newValue = f
                     self.lineEdit.setText(f)
             self._addTextBoxWithLink("Browse", edit, True)
         elif self.settingType == BOOL:
@@ -415,10 +416,8 @@ class TreeSettingItem(QTreeWidgetItem):
             idx = self.combo.findText(str(value))
             self.combo.setCurrentIndex(idx)
         elif self.settingType == TEXT:
-            self.newValue = value
             self._addTextEdit()
         elif self.settingType == STRING:
-            self.newValue = value
             self._addTextBoxWithLink(None, None)
         elif self.settingType == AUTHCFG:
             def edit():
@@ -426,8 +425,7 @@ class TreeSettingItem(QTreeWidgetItem):
                 dlg = AuthConfigSelectDialog(parent.treeWidget(), authcfg=currentAuthCfg)
                 ret = dlg.exec_()
                 if ret:
-                    self.newValue = dlg.authcfg
-                    self.lineEdit.setText(self.newValue)
+                    self.lineEdit.setText(dlg.authcfg)
             self._addTextBoxWithLink("Select", edit, True)
         else:
             self.setFlags(self.flags() | Qt.ItemIsEditable)
@@ -469,7 +467,6 @@ class TreeSettingItem(QTreeWidgetItem):
             idx = self.combo.findText(str(value))
             self.combo.setCurrentIndex(idx)
         elif self.settingType in [TEXT, CRS, STRING, FILES, FOLDER, AUTHCFG]:
-            self.newValue = value
             self.lineEdit.setText(value)
         else:
             self.setText(1, unicode(value))
