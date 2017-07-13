@@ -20,6 +20,10 @@ def tempFolder(namespace = None):
         QDir().mkpath(tempDir)
     return unicode(os.path.abspath(tempDir))
 
+def tempFilename(ext = None, namespace = None):
+    ext = "." + ext if ext is not None else ""
+    filename = os.path.join(tempFolder(), str(time.time()) + ext)
+    return filename
 
 def tempFilenameInTempFolder(basename, namespace = None):
     path = tempFolder(namespace)
