@@ -35,7 +35,9 @@ def mapLayers(name=None, types=None):
     else:
         return layers
 
-
+def vectorLayers():
+    return mapLayer(types = QgsVectorLayer.VectorLayer)
+    
 def addLayer(layer, loadInLegend=True):
     """
     Add a open layer to the QGIS session and layer registry.
@@ -148,6 +150,11 @@ def createWmsLayer(url, layer, style, crs):
 def createWfsLayer(url, layer, crs):
     pass
 
+class WrongLayerNameException(BaseException) :
+    pass
+
+class WrongLayerSourceException(BaseException) :
+    pass
 
 def layerFromName(name):
     '''
@@ -159,8 +166,7 @@ def layerFromName(name):
     for layer in layers:
         if layer.name() == name:
             return layer
-
-
+    raise WrongLayerNameException()
 def loadLayer(filename, name = None):
     '''
     Tries to load a layer from the given file
@@ -189,7 +195,7 @@ def loadLayerNoCrsDialog(filename, name=None):
     settings = QSettings()
     prjSetting = settings.value('/Projections/defaultBehaviour')
     settings.setValue('/Projections/defaultBehaviour', '')
-    layer = load_layer(filename, name)
+    layer = loadLayer(filename, name)
     settings.setValue('/Projections/defaultBehaviour', prjSetting)
     return layer
 

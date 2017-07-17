@@ -19,7 +19,7 @@ from qgis.PyQt.QtWidgets import (QAction,
                                  QSizePolicy,
                                  QFileDialog,
                                  QComboBox,
-
+                                 QLabel
                                 )
 from qgis.core import QgsApplication
 from qgis.gui import QgsFilterLineEdit, QgsGenericProjectionSelector
