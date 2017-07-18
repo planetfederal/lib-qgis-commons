@@ -74,10 +74,18 @@ def removeAboutMenu(menuName, parentMenuFunction=None):
     action = _aboutActions.pop(menuName, None)
     action.deleteLater()
 
-def openAboutDialog(namespace):
+def openAboutDialog(namespace):    
+    showMessageDialog(pluginDetails(namespace), "Plugin info")    
+
+def showMessageDialog(title, text):
+    '''
+    Show a dialog containing a given text, with a given title. 
+
+    The text accepts HTML syntax
+    '''
     dlg = QgsMessageOutput.createMessageOutput()
-    dlg.setTitle("Plugin info")
-    dlg.setMessage(pluginDetails(namespace), QgsMessageOutput.MessageHtml)
+    dlg.setTitle(title)
+    dlg.setMessage(text, QgsMessageOutput.MessageHtml)
     dlg.showMessage()
 
 

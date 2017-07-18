@@ -36,8 +36,8 @@ def mapLayers(name=None, types=None):
         return layers
 
 def vectorLayers():
-    return mapLayer(types = QgsVectorLayer.VectorLayer)
-    
+    return mapLayers(types = QgsVectorLayer.VectorLayer)
+
 def addLayer(layer, loadInLegend=True):
     """
     Add a open layer to the QGIS session and layer registry.
@@ -167,7 +167,8 @@ def layerFromName(name):
         if layer.name() == name:
             return layer
     raise WrongLayerNameException()
-def loadLayer(filename, name = None):
+
+def loadLayer(filename, name = None, provider=None):
     '''
     Tries to load a layer from the given file
 
@@ -177,16 +178,16 @@ def loadLayer(filename, name = None):
     If not passed or None, it will use the filename basename
     '''
     name = name or os.path.splitext(os.path.basename(filename))[0]
-    qgslayer = QgsVectorLayer(filename, name, 'ogr')
+    qgslayer = QgsVectorLayer(filename, name, provider)
     if not qgslayer.isValid():
-        qgslayer = QgsRasterLayer(filename, name)
+        qgslayer = QgsRasterLayer(filename, name, provider)
         if not qgslayer.isValid():
             raise RuntimeError('Could not load layer: ' + unicode(filename))
 
     return qgslayer
 
 
-def loadLayerNoCrsDialog(filename, name=None):
+def loadLayerNoCrsDialog(filename, name=None, provider=None):
     '''
     Tries to load a layer from the given file
     Same as the loadLayer method, but it does not ask for CRS, regardless of current
@@ -195,7 +196,7 @@ def loadLayerNoCrsDialog(filename, name=None):
     settings = QSettings()
     prjSetting = settings.value('/Projections/defaultBehaviour')
     settings.setValue('/Projections/defaultBehaviour', '')
-    layer = loadLayer(filename, name)
+    layer = loadLayer(filename, name, provider)
     settings.setValue('/Projections/defaultBehaviour', prjSetting)
     return layer
 
