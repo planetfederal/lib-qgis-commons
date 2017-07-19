@@ -25,7 +25,7 @@ from qgis.core import QgsApplication
 from qgis.gui import QgsFilterLineEdit, QgsGenericProjectionSelector
 from qgis.utils import iface
 
-from qgiscommons.setting import *
+from qgiscommons.settings import *
 from qgiscommons.utils import _callerName, _callerPath
 from qgiscommons.gui.authconfigselect import AuthConfigSelectDialog
 
@@ -74,7 +74,7 @@ def openSettingsDialog(namespace):
 class ConfigDialog(QDialog):
 
     def __init__(self, namespace):
-        self.settings = _settings[namespace]
+        self.settings = pluginSettings(namespace)
         self.namespace = namespace
         QDialog.__init__(self, iface.mainWindow())
         self.setupUi()
@@ -267,7 +267,7 @@ class TreeSettingItem(QTreeWidgetItem):
                 f = QFileDialog.getOpenFileName(parent.treeWidget(), "Select file", "", "*.*")
                 if f:
                     self.lineEdit.setText(f)
-            self._addTextBoxWithLink("Browse", edit, True)            
+            self._addTextBoxWithLink("Browse", edit, True)
         elif self.settingType == FOLDER:
             def edit():
                 f = QFileDialog.getExistingDirectory(parent.treeWidget(), "Select folder", "")

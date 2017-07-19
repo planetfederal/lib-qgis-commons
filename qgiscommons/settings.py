@@ -2,6 +2,7 @@ import os
 import json
 
 from qgiscommons.utils import _callerName, _callerPath
+from qgis.PyQt.QtCore import QPyNullVariant, Qt
 
 try:
     from qgis.core import QgsSettings
@@ -77,6 +78,9 @@ def pluginSetting(name, namespace=None, typ=None):
     else:
         return _find_in_cache(name, 'default')
 
+def pluginSettings(namespace=None):
+    namespace = namespace or _callerName().split(".")[0]
+    return _settings.get(namespace, {})
 
 _settings = {}
 def readSettings(settings_path=None):
