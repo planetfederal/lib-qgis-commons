@@ -27,11 +27,11 @@ class TestSettings(unittest.TestCase):
         setPluginSetting('mytrueboolsetting', True)
         self.assertEqual(pluginSetting('mytrueboolsetting'), True)
 
-    def testNonExistentSetting():
+    def testNonExistentSetting(self):
         value = pluginSetting('wrongsetting')
         self.assertIsNone(value)
 
-    def testNoneValue():
+    def testNoneValue(self):
         value = pluginSetting('nonenumber')
         self.assertIsNone(value)
         value = pluginSetting('nonestring')
