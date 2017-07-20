@@ -40,8 +40,8 @@ def vectorLayers():
 
 def addLayer(layer, loadInLegend=True):
     """
-    Add a open layer to the QGIS session and layer registry.
-    :param layer: The layer object to add the QGIS layer registry and session.
+    Add one or several layers to the QGIS session and layer registry.
+    :param layer: The layer object or list with layers  to add the QGIS layer registry and session.
     :param loadInLegend: True if this layer should be added to the legend.
     :return: The added layer
     """
@@ -200,16 +200,3 @@ def loadLayerNoCrsDialog(filename, name=None, provider=None):
     settings.setValue('/Projections/defaultBehaviour', prjSetting)
     return layer
 
-
-def loadVector(path, name=None, provider="ogr"):
-    """
-    Loads a vector layer and returns the QgsVectorLayer instance.
-    :param path: Path to the vector layer.
-    :param name: The name of the new layer.
-    :param provider: The provider to open this layer with defaults to ogr.
-    :return: A QgsVectorLayer instance for the layer.
-    """
-    if not name:
-        name = os.path.basename(path)
-    layer = QgsVectorLayer(path, name, provider)
-    return layer

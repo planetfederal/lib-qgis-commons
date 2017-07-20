@@ -32,8 +32,10 @@ from qgis.core import (
     QgsMapSettings,
     QgsMapRendererParallelJob,
     QgsMapRendererSequentialJob,
-    QgsFontUtils
+    QgsFontUtils,
+    QgsProject
 )
+from qgis.utils import iface
 from qgis.testing import start_app
 import hashlib
 import re
@@ -838,3 +840,7 @@ def waitServer(url, timeout=10):
         except Exception as e:
             if now() > end:
                 return False
+
+def loadTestProject(name):
+    projectFile = os.path.join(os.path.dirname(__file__), "data", name + ".qgs")
+    iface.addProject(projectFile)

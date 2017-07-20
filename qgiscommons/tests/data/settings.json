@@ -34,5 +34,19 @@
      "default": "option 1",
      "options":["option 1", "option 2", "option 3"],
      "group": "Group 2"
+    },
+    {"name":"nonestring",
+     "label": "None String",
+     "description": "None String",
+     "type": "string",
+     "default": null,
+     "group": "Group 1"
+    },
+    {"name":"nonenumber",
+     "label": "None number",
+     "description": "None number",
+     "type": "string",
+     "default": null,
+     "group": "Group 1"
     }
 ]
