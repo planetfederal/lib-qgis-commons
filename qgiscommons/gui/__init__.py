@@ -33,7 +33,7 @@ def addHelpMenu(menuName, parentMenuFunction=None):
 def removeHelpMenu(menuName, parentMenuFunction=None):
     global _helpActions
     parentMenuFunction = parentMenuFunction or iface.removePluginMenu
-    parentMenuFunction(menuName, _aboutActions[menuName])
+    parentMenuFunction(menuName, _helpActions[menuName])
     action = _helpActions.pop(menuName, None)
     action.deleteLater()
 
