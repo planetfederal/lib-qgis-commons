@@ -75,7 +75,7 @@ def removeAboutMenu(menuName, parentMenuFunction=None):
     action.deleteLater()
 
 def openAboutDialog(namespace):    
-    showMessageDialog(pluginDetails(namespace), "Plugin info")    
+    showMessageDialog("Plugin info", pluginDetails(namespace))    
 
 def showMessageDialog(title, text):
     '''
