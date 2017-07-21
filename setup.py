@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name="qgiscommons",
-    version="0.1.6",
+    version="0.1.7",
     author="Victor Olaya",
     author_email="volaya@boundlessgeo.com",
     description="Common functions and classes to be used in QGIS plugins",    
