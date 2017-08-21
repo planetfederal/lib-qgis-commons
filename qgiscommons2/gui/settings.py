@@ -4,6 +4,7 @@ from PyQt4.QtCore import *
 import os
 import json
 from collections import defaultdict
+<<<<<<< HEAD:qgiscommons/settings.py
 from PyQt4.QtGui import *
 from qgis.core import *
 from qgis.gui import *
@@ -128,6 +129,35 @@ def readSettings(settings_path=None):
     settings_path = settings_path or os.path.join(os.path.dirname(_callerPath()), "settings.json")
     with open(settings_path) as f:
         _settings[namespace] = json.load(f)
+=======
+
+from qgis.PyQt.QtGui import QIcon
+from qgis.PyQt.QtCore import QPyNullVariant, Qt
+from qgis.PyQt.QtWidgets import (QAction,
+                                 QDialog,
+                                 QVBoxLayout,
+                                 QHBoxLayout,
+                                 QTreeWidget,
+                                 QPushButton,
+                                 QDialogButtonBox,
+                                 QTreeWidgetItem,
+                                 QTreeWidgetItemIterator,
+                                 QTextEdit,
+                                 QWidget,
+                                 QLineEdit,
+                                 QSizePolicy,
+                                 QFileDialog,
+                                 QComboBox,
+                                 QLabel
+                                )
+from qgis.core import QgsApplication
+from qgis.gui import QgsFilterLineEdit, QgsGenericProjectionSelector
+from qgis.utils import iface
+
+from qgiscommons2.settings import *
+from qgiscommons2.utils import _callerName, _callerPath
+from qgiscommons2.gui.authconfigselect import AuthConfigSelectDialog
+>>>>>>> new_approach:qgiscommons2/gui/settings.py
 
 _settingActions = {}
 def addSettingsMenu(menuName, parentMenuFunction=None):
@@ -173,7 +203,7 @@ def openSettingsDialog(namespace):
 class ConfigDialog(QDialog):
 
     def __init__(self, namespace):
-        self.settings = _settings[namespace]
+        self.settings = pluginSettings(namespace)
         self.namespace = namespace
         QDialog.__init__(self, iface.mainWindow())
         self.setupUi()
@@ -315,7 +345,6 @@ class TreeSettingItem(QTreeWidgetItem):
             self.textEdit.setReadOnly(True)
         self.textEdit.setPlainText(self._value)
         layout.addWidget(self.textEdit)
-        self.newValue = self._value
         w = QWidget()
         w.setLayout(layout)
         self.tree.setItemWidget(self, 1, w)
@@ -334,7 +363,6 @@ class TreeSettingItem(QTreeWidgetItem):
             self.linkLabel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
             layout.addWidget(self.linkLabel)
             self.linkLabel.linkActivated.connect(func)
-        self.newValue = self._value
         w = QWidget()
         w.setLayout(layout)
         self.tree.setItemWidget(self, 1, w)
@@ -345,7 +373,6 @@ class TreeSettingItem(QTreeWidgetItem):
         self.namespace = namespace
         self.tree = tree
         self._value = value
-        self.newValue = None
         self.setting = setting
         self.name = setting["name"]
         self.labelText = setting["label"]
@@ -358,21 +385,24 @@ class TreeSettingItem(QTreeWidgetItem):
                 if selector.exec_():
                     authId = selector.selectedAuthId()
                     if authId.upper().startswith("EPSG:"):
-                        self.newValue = authId
                         self.lineEdit.setText(authId)
             self._addTextBoxWithLink("Edit", edit, False)
         elif self.settingType == FILES:
             def edit():
                 f = QFileDialog.getOpenFileNames(parent.treeWidget(), "Select file", "", "*.*")
                 if f:
-                    self.newValue = f
                     self.lineEdit.setText(",".join(f))
+            self._addTextBoxWithLink("Browse", edit, True)
+        elif self.settingType == FILE:
+            def edit():
+                f = QFileDialog.getOpenFileName(parent.treeWidget(), "Select file", "", "*.*")
+                if f:
+                    self.lineEdit.setText(f)
             self._addTextBoxWithLink("Browse", edit, True)
         elif self.settingType == FOLDER:
             def edit():
                 f = QFileDialog.getExistingDirectory(parent.treeWidget(), "Select folder", "")
                 if f:
-                    self.newValue = f
                     self.lineEdit.setText(f)
             self._addTextBoxWithLink("Browse", edit, True)
         elif self.settingType == BOOL:
@@ -389,10 +419,8 @@ class TreeSettingItem(QTreeWidgetItem):
             idx = self.combo.findText(str(value))
             self.combo.setCurrentIndex(idx)
         elif self.settingType == TEXT:
-            self.newValue = value
             self._addTextEdit()
         elif self.settingType == STRING:
-            self.newValue = value
             self._addTextBoxWithLink(None, None)
         elif self.settingType == AUTHCFG:
             def edit():
@@ -400,8 +428,7 @@ class TreeSettingItem(QTreeWidgetItem):
                 dlg = AuthConfigSelectDialog(parent.treeWidget(), authcfg=currentAuthCfg)
                 ret = dlg.exec_()
                 if ret:
-                    self.newValue = dlg.authcfg
-                    self.lineEdit.setText(self.newValue)
+                    self.lineEdit.setText(dlg.authcfg)
             self._addTextBoxWithLink("Select", edit, True)
         else:
             self.setFlags(self.flags() | Qt.ItemIsEditable)
@@ -444,7 +471,6 @@ class TreeSettingItem(QTreeWidgetItem):
             idx = self.combo.findText(str(value))
             self.combo.setCurrentIndex(idx)
         elif self.settingType in [TEXT, CRS, STRING, FILES, FOLDER, AUTHCFG]:
-            self.newValue = value
             self.lineEdit.setText(value)
         else:
             self.setText(1, unicode(value))

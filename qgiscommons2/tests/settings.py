@@ -5,7 +5,7 @@ import sip
 for c in ('QDate', 'QDateTime', 'QString', 'QTextStream', 'QTime', 'QUrl', 'QVariant'):
     sip.setapi(c, 2)
 
-from qgiscommons.settings import setPluginSetting, pluginSetting, readSettings
+from qgiscommons2.settings import setPluginSetting, pluginSetting, readSettings
 
 class TestSettings(unittest.TestCase):
 
@@ -26,6 +26,18 @@ class TestSettings(unittest.TestCase):
         self.assertEqual(pluginSetting('mytrueboolsetting'), False)
         setPluginSetting('mytrueboolsetting', True)
         self.assertEqual(pluginSetting('mytrueboolsetting'), True)
+
+    def testNonExistentSetting(self):
+        value = pluginSetting('wrongsetting')
+        self.assertIsNone(value)
+
+    def testNoneValue(self):
+        value = pluginSetting('nonenumber')
+        self.assertIsNone(value)
+        value = pluginSetting('nonestring')
+        self.assertIsNone(value)
+
+    
 
 
 

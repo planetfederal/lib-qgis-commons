@@ -25,11 +25,13 @@ def mapLayers(name=None, types=None):
     else:
         return layers
 
+def vectorLayers():
+    return mapLayers(types = QgsVectorLayer.VectorLayer)
 
 def addLayer(layer, loadInLegend=True):
     """
-    Add a open layer to the QGIS session and layer registry.
-    :param layer: The layer object to add the QGIS layer registry and session.
+    Add one or several layers to the QGIS session and layer registry.
+    :param layer: The layer object or list with layers  to add the QGIS layer registry and session.
     :param loadInLegend: True if this layer should be added to the legend.
     :return: The added layer
     """
@@ -137,6 +139,11 @@ def createWmsLayer(url, layer, style, crs):
 def createWfsLayer(url, layer, crs):
     pass
 
+class WrongLayerNameException(BaseException) :
+    pass
+
+class WrongLayerSourceException(BaseException) :
+    pass
 
 def layerFromName(name):
     '''
@@ -148,8 +155,13 @@ def layerFromName(name):
     for layer in layers:
         if layer.name() == name:
             return layer
+    raise WrongLayerNameException()
 
+<<<<<<< HEAD:qgiscommons/layers.py
 def loadLayer(filename, name = None):
+=======
+def loadLayer(filename, name = None, provider=None):
+>>>>>>> new_approach:qgiscommons2/layers.py
     '''
     Tries to load a layer from the given file
 
@@ -159,15 +171,20 @@ def loadLayer(filename, name = None):
     If not passed or None, it will use the filename basename
     '''
     name = name or os.path.splitext(os.path.basename(filename))[0]
-    qgslayer = QgsVectorLayer(filename, name, 'ogr')
+    qgslayer = QgsVectorLayer(filename, name, provider)
     if not qgslayer.isValid():
-        qgslayer = QgsRasterLayer(filename, name)
+        qgslayer = QgsRasterLayer(filename, name, provider)
         if not qgslayer.isValid():
             raise RuntimeError('Could not load layer: ' + unicode(filename))
 
     return qgslayer
 
+<<<<<<< HEAD:qgiscommons/layers.py
 def loadLayerNoCrsDialog(filename, name=None):
+=======
+
+def loadLayerNoCrsDialog(filename, name=None, provider=None):
+>>>>>>> new_approach:qgiscommons2/layers.py
     '''
     Tries to load a layer from the given file
     Same as the loadLayer method, but it does not ask for CRS, regardless of current 
@@ -176,10 +193,11 @@ def loadLayerNoCrsDialog(filename, name=None):
     settings = QTCore.QSettings()
     prjSetting = settings.value('/Projections/defaultBehaviour')
     settings.setValue('/Projections/defaultBehaviour', '')
-    layer = load_layer(filename, name)
+    layer = loadLayer(filename, name, provider)
     settings.setValue('/Projections/defaultBehaviour', prjSetting)
     return layer
 
+<<<<<<< HEAD:qgiscommons/layers.py
 def loadVector(path, name=None, provider="ogr"):
     """
     Loads a vector layer and returns the QgsVectorLayer instance.
@@ -193,3 +211,5 @@ def loadVector(path, name=None, provider="ogr"):
     layer = QgsVectorLayer(path, name, provider)
     return layer
 
+=======
+>>>>>>> new_approach:qgiscommons2/layers.py

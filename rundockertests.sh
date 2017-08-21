@@ -5,7 +5,7 @@ xhost +
 
 # One of master_2, master, release
 TARGET_VERSION="master_2"
-PLUGIN_NAME="qgiscommons"
+PLUGIN_NAME="qgiscommons2"
 
 
 docker rm -f qgis-testing-environment
@@ -29,5 +29,6 @@ docker exec -it qgis-testing-environment sh -c "ln -s /tests_directory/$PLUGIN_N
 
 # run the tests
 docker exec -it qgis-testing-environment sh -c "DISPLAY=unix:0 qgis_testrunner.sh ${PLUGIN_NAME}.tests.settings"
+docker exec -it qgis-testing-environment sh -c "DISPLAY=unix:0 qgis_testrunner.sh ${PLUGIN_NAME}.tests.layers"
 docker exec -it qgis-testing-environment sh -c "DISPLAY=unix:0 qgis_testrunner.sh ${PLUGIN_NAME}.tests.oauth2"
 docker exec -it qgis-testing-environment sh -c "DISPLAY=unix:0 PYTHONPATH=/usr/share/qgis/python/:/root/.qgis2/python/plugins/ USE_ONLINE_HTTPBIN=True python /root/.qgis2/python/plugins/${PLUGIN_NAME}/tests/networkaccessmanager.py"
