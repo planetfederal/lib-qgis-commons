@@ -5,7 +5,7 @@ xhost +
 
 # One of master_2, master, release
 TARGET_VERSION="master_2"
-PLUGIN_NAME="qgiscommons"
+PLUGIN_NAME="qgiscommons2"
 
 
 docker rm -f qgis-testing-environment
