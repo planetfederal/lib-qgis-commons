@@ -1,11 +1,7 @@
 import os
-from PyQt4.QtCore import *
 import inspect
-<<<<<<< HEAD:qgiscommons/utils.py
-=======
 import qgiscommons2
 from pyplugin_installer.installer_data import plugins
->>>>>>> new_approach:qgiscommons2/utils.py
 
 def _callerName():
     stack = inspect.stack()
@@ -21,14 +17,13 @@ def _callerName():
     del parentframe
     return  ".".join(name)
 
+
 def _callerPath():
     stack = inspect.stack()
     parentframe = stack[2][0]
     name = []
     module = inspect.getmodule(parentframe)
     return module.__file__
-<<<<<<< HEAD:qgiscommons/utils.py
-=======
 
 def pluginDetails(namespace):
     plugin = plugins.all()[namespace]
@@ -99,4 +94,3 @@ def pluginDetails(namespace):
 
 def tr(s):
     return s
->>>>>>> new_approach:qgiscommons2/utils.py
