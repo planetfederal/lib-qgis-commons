@@ -6,7 +6,7 @@ import time
 from qgis.PyQt.QtCore import QDir
 from qgis.PyQt.QtGui import QFileDialog
 
-from qgiscommons.utils import _callerName
+from qgiscommons2.utils import _callerName
 
 
 def removeTempFolder(namespace = None):

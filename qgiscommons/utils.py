@@ -1,6 +1,6 @@
 import os
 import inspect
-import qgiscommons
+import qgiscommons2
 from pyplugin_installer.installer_data import plugins
 
 def _callerName():
@@ -83,8 +83,8 @@ def pluginDetails(namespace):
         html += changelog.replace('\n', '<br/>')
 
     html += '<br/><br/>'    
-    html += '{}: {} ({} {})<br/>'.format(tr('Version of qgiscommons library'), qgiscommons.__version__, 
-        tr("Located at"), os.path.dirname(qgiscommons.__file__))
+    html += '{}: {} ({} {})<br/>'.format(tr('Version of qgiscommons library'), qgiscommons2.__version__, 
+        tr("Located at"), os.path.dirname(qgiscommons2.__file__))
 
     html += '</td></tr></table>'
     html += '</body>'

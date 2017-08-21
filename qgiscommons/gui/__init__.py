@@ -1,5 +1,5 @@
-from qgiscommons.utils import _callerName, _callerPath, pluginDetails
-from qgiscommons.settings import pluginSetting, setPluginSetting
+from qgiscommons2.utils import _callerName, _callerPath, pluginDetails
+from qgiscommons2.settings import pluginSetting, setPluginSetting
 from PyQt4 import QtGui, QtCore, uic
 from qgis.core import *
 from qgis.utils import iface

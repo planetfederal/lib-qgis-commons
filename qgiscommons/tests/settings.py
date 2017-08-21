@@ -5,7 +5,7 @@ import sip
 for c in ('QDate', 'QDateTime', 'QString', 'QTextStream', 'QTime', 'QUrl', 'QVariant'):
     sip.setapi(c, 2)
 
-from qgiscommons.settings import setPluginSetting, pluginSetting, readSettings
+from qgiscommons2.settings import setPluginSetting, pluginSetting, readSettings
 
 class TestSettings(unittest.TestCase):
 

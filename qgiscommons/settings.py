@@ -1,7 +1,7 @@
 import os
 import json
 
-from qgiscommons.utils import _callerName, _callerPath
+from qgiscommons2.utils import _callerName, _callerPath
 from qgis.PyQt.QtCore import QPyNullVariant, Qt
 
 try:

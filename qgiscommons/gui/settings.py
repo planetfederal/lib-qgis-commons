@@ -25,9 +25,9 @@ from qgis.core import QgsApplication
 from qgis.gui import QgsFilterLineEdit, QgsGenericProjectionSelector
 from qgis.utils import iface
 
-from qgiscommons.settings import *
-from qgiscommons.utils import _callerName, _callerPath
-from qgiscommons.gui.authconfigselect import AuthConfigSelectDialog
+from qgiscommons2.settings import *
+from qgiscommons2.utils import _callerName, _callerPath
+from qgiscommons2.gui.authconfigselect import AuthConfigSelectDialog
 
 _settingActions = {}
 def addSettingsMenu(menuName, parentMenuFunction=None):

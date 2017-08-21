@@ -3,8 +3,8 @@ import os
 import sys
 
 from utilities import loadTestProject
-from qgiscommons.settings import setPluginSetting, pluginSetting, readSettings
-from qgiscommons.layers import *
+from qgiscommons2.settings import setPluginSetting, pluginSetting, readSettings
+from qgiscommons2.layers import *
 from qgis.utils import iface
 from qgis.core import QgsRasterLayer, QgsVectorLayer
 
