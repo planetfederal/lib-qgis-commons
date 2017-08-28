@@ -159,7 +159,7 @@ class WrongLayerSourceException(BaseException) :
 def layerFromName(name):
     '''
     Returns the layer from the current project with the passed name
-    Returns None if no layer with that name is found
+    Raises WrongLayerNameException if no layer with that name is found
     If several layers with that name exist, only the first one is returned
     '''
     layers =_layerreg.mapLayers().values()
@@ -167,6 +167,18 @@ def layerFromName(name):
         if layer.name() == name:
             return layer
     raise WrongLayerNameException()
+
+def layerFromSource(name):
+    '''
+    Returns the layer from the current project with the passed source
+    Raises WrongLayerSourceException if no layer with that source is found
+    '''
+    layers =_layerreg.mapLayers().values()
+    for layer in layers:
+        if layer.source() == source:
+            return layer
+    raise WrongLayerSourceException()
+
 
 def loadLayer(filename, name = None, provider=None):
     '''
