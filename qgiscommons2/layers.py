@@ -2,8 +2,13 @@ import os
 import re
 
 from qgis.PyQt.QtCore import QVariant, QSettings
-from qgis.core import (QGis,
-                       QgsMapLayerRegistry,
+
+try:
+    from qgis.core import QGis
+except ImportError:
+    from qgis.core import Qgis as QGis, QgsWkbTypes
+
+from qgis.core import (
                        QgsField,
                        QgsFields,
                        QgsCoordinateReferenceSystem,
@@ -13,7 +18,12 @@ from qgis.core import (QGis,
                       )
 
 
-_layerreg = QgsMapLayerRegistry.instance()
+try:
+    from qgis.core import QgsMapLayerRegistry
+    _layerreg = QgsMapLayerRegistry.instance()
+except ImportError:
+    from qgis.core import QgsProject
+    _layerreg = QgsProject.instance()
 
 def mapLayers(name=None, types=None):
     """
@@ -47,7 +57,7 @@ def addLayer(layer, loadInLegend=True):
     """
     if not hasattr(layer, "__iter__"):
         layer = [layer]
-    QgsMapLayerRegistry.instance().addMapLayers(layer, loadInLegend)
+    _layerreg.addMapLayers(layer, loadInLegend)
     return layer
 
 TYPE_MAP = {
@@ -57,14 +67,29 @@ TYPE_MAP = {
     bool: QVariant.Bool
 }
 
-GEOM_TYPE_MAP = {
-    QGis.WKBPoint: 'Point',
-    QGis.WKBLineString: 'LineString',
-    QGis.WKBPolygon: 'Polygon',
-    QGis.WKBMultiPoint: 'MultiPoint',
-    QGis.WKBMultiLineString: 'MultiLineString',
-    QGis.WKBMultiPolygon: 'MultiPolygon',
-}
+try:
+    GEOM_TYPE_MAP = {
+        QGis.WKBPoint: 'Point',
+        QGis.WKBLineString: 'LineString',
+        QGis.WKBPolygon: 'Polygon',
+        QGis.WKBMultiPoint: 'MultiPoint',
+        QGis.WKBMultiLineString: 'MultiLineString',
+        QGis.WKBMultiPolygon: 'MultiPolygon',
+    }
+except:
+    GEOM_TYPE_MAP = {
+        QgsWkbTypes.Point: 'Point',
+        QgsWkbTypes.LineString: 'LineString',
+        QgsWkbTypes.MultiPoint: 'MultiPoint',
+        QgsWkbTypes.MultiLineString: 'MultiLineString',
+        QgsWkbTypes.MultiPolygon: 'MultiPolygon',
+    }
+    QGis.WKBPoint = QgsWkbTypes.Point
+    QGis.WKBMultiPoint = QgsWkbTypes.MultiPoint
+    QGis.WKBLine = QgsWkbTypes.LineString
+    QGis.WKBMultiLine = QgsWkbTypes.MultiLineString
+    QGis.WKBPolygon = QgsWkbTypes.Polygon
+    QGis.WKBMultiPolygon = QgsWkbTypes.MultiPolygon
 
 def _toQgsField(f):
     if isinstance(f, QgsField):
@@ -178,8 +203,9 @@ def loadLayer(filename, name = None, provider=None):
     If not passed or None, it will use the filename basename
     '''
     name = name or os.path.splitext(os.path.basename(filename))[0]
-    qgslayer = QgsVectorLayer(filename, name, provider)
-    if not qgslayer.isValid():
+    if provider != 'gdal': # QGIS3 crashes if opening a raster as vector ... this needs further investigations
+        qgslayer = QgsVectorLayer(filename, name, provider)
+    if provider == 'gdal' or not qgslayer.isValid():
         qgslayer = QgsRasterLayer(filename, name, provider)
         if not qgslayer.isValid():
             raise RuntimeError('Could not load layer: ' + unicode(filename))
@@ -196,7 +222,11 @@ def loadLayerNoCrsDialog(filename, name=None, provider=None):
     settings = QSettings()
     prjSetting = settings.value('/Projections/defaultBehaviour')
     settings.setValue('/Projections/defaultBehaviour', '')
+    # QGIS3:
+    prjSetting3 = settings.value('/Projections/defaultBehavior')
+    settings.setValue('/Projections/defaultBehavior', '')
     layer = loadLayer(filename, name, provider)
     settings.setValue('/Projections/defaultBehaviour', prjSetting)
+    settings.setValue('/Projections/defaultBehavior', prjSetting3)
     return layer
 

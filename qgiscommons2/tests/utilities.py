@@ -28,13 +28,18 @@ from qgis.PyQt.QtCore import QDir
 from qgis.core import (
     QgsCoordinateReferenceSystem,
     QgsVectorFileWriter,
-    QgsMapLayerRegistry,
     QgsMapSettings,
     QgsMapRendererParallelJob,
     QgsMapRendererSequentialJob,
     QgsFontUtils,
     QgsProject
 )
+
+try:
+    from qgis.core import QgsMapLayerRegistry
+except ImportError:
+    pass
+
 from qgis.utils import iface
 from qgis.testing import start_app
 import hashlib
