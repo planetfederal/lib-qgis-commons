@@ -3,7 +3,7 @@ import json
 from collections import defaultdict
 
 from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtCore import QPyNullVariant, Qt
+from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtWidgets import (QAction,
                                  QDialog,
                                  QVBoxLayout,
