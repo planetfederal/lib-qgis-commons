@@ -2,7 +2,7 @@ import os
 import json
 
 from qgiscommons2.utils import _callerName, _callerPath
-from qgis.PyQt.QtCore import QPyNullVariant, Qt
+from qgis.PyQt.QtCore import Qt
 
 try:
     from qgis.core import QgsSettings
@@ -10,6 +10,14 @@ try:
 except:
     from qgis.PyQt.QtCore import QSettings
     settings = QSettings()
+
+
+
+try:
+    from qgis.PyQt.QtCore import QPyNullVariant
+except:
+    pass
+
 
 #Types to use in the settings.json file
 
@@ -72,8 +80,11 @@ def pluginSetting(name, namespace=None, typ=None):
         if typ is None:
             typ = _type_map(_find_in_cache(name, 'type'))
         v = settings.value(full_name, None, type=typ)
-        if isinstance(v, QPyNullVariant):
-            v = None
+        try:
+            if isinstance(v, QPyNullVariant):
+                v = None
+        except:
+            pass
         return v
     else:
         return _find_in_cache(name, 'default')

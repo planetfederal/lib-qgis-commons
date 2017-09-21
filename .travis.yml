@@ -11,20 +11,19 @@ env:
   - QGIS_VERSION_TAG=release PYTHON_EXECUTABLE=python PIP_EXECUTABLE=pip
   - QGIS_VERSION_TAG=master_2 PYTHON_EXECUTABLE=python PIP_EXECUTABLE=pip
   - QGIS_VERSION_TAG=master PYTHON_EXECUTABLE=python3 PIP_EXECUTABLE=pip3
-matrix:
-  allow_failures:
-  - env: QGIS_VERSION_TAG=master PYTHON_EXECUTABLE=python3 PIP_EXECUTABLE=pip3
 before_install:
 - docker pull boundlessgeo/qgis-testing-environment:${QGIS_VERSION_TAG}
 - docker tag boundlessgeo/qgis-testing-environment:${QGIS_VERSION_TAG} qgis-testing-environment
 install:
 - docker run -d --name qgis-testing-environment -v ${TRAVIS_BUILD_DIR}:/tests_directory -e DISPLAY=:99 qgis-testing-environment
 - sleep 10
+- if [[ ${QGIS_VERSION_TAG} == "master" ]]; then docker exec -it qgis-testing-environment sh -c "pip3 install nose2"; fi
 script:
 - docker exec -it qgis-testing-environment sh -c "qgis_setup.sh $PLUGIN_NAME"
 - docker exec -it qgis-testing-environment sh -c "qgis_testrunner.sh ${PLUGIN_NAME}.tests.settings"
 - docker exec -it qgis-testing-environment sh -c "qgis_testrunner.sh ${PLUGIN_NAME}.tests.oauth2"
-- docker exec -it qgis-testing-environment sh -c "PYTHONPATH=/usr/share/qgis/python/:/root/.qgis2/python/plugins/ USE_ONLINE_HTTPBIN=True python /root/.qgis2/python/plugins/${PLUGIN_NAME}/tests/networkaccessmanager.py"
+- docker exec -it qgis-testing-environment sh -c "qgis_testrunner.sh ${PLUGIN_NAME}.tests.layers"
+- if [[ ${QGIS_VERSION_TAG} != "master" ]]; then docker exec -it qgis-testing-environment sh -c "PYTHONPATH=/usr/share/qgis/python/:/root/.qgis2/python/plugins/ USE_ONLINE_HTTPBIN=True python /root/.qgis2/python/plugins/${PLUGIN_NAME}/tests/networkaccessmanager.py"; fi
 notifications:
   slack:
     rooms:
