@@ -22,7 +22,7 @@ script:
 - docker exec -it qgis-testing-environment sh -c "qgis_testrunner.sh ${PLUGIN_NAME}.tests.settings"
 - docker exec -it qgis-testing-environment sh -c "qgis_testrunner.sh ${PLUGIN_NAME}.tests.oauth2"
 - docker exec -it qgis-testing-environment sh -c "qgis_testrunner.sh ${PLUGIN_NAME}.tests.layers"
-- [ ${QGIS_VERSION_TAG} == "master" ] || docker exec -it qgis-testing-environment sh -c "PYTHONPATH=/usr/share/qgis/python/:/root/.qgis2/python/plugins/ USE_ONLINE_HTTPBIN=True python /root/.qgis2/python/plugins/${PLUGIN_NAME}/tests/networkaccessmanager.py"
+- if [[ ${QGIS_VERSION_TAG} != "master" ]]; then docker exec -it qgis-testing-environment sh -c "PYTHONPATH=/usr/share/qgis/python/:/root/.qgis2/python/plugins/ USE_ONLINE_HTTPBIN=True python /root/.qgis2/python/plugins/${PLUGIN_NAME}/tests/networkaccessmanager.py; fi"
 notifications:
   slack:
     rooms:
