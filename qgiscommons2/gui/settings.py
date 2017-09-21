@@ -22,7 +22,12 @@ from qgis.PyQt.QtWidgets import (QAction,
                                  QLabel
                                 )
 from qgis.core import QgsApplication
-from qgis.gui import QgsFilterLineEdit, QgsGenericProjectionSelector
+from qgis.gui import QgsFilterLineEdit
+try:
+    from qgis.gui import QgsGenericProjectionSelector as QgsProjectionSelectionDialog
+except:
+    from qgis.gui import QgsProjectionSelectionDialog
+
 from qgis.utils import iface
 
 from qgiscommons2.settings import *
@@ -249,12 +254,12 @@ class TreeSettingItem(QTreeWidgetItem):
         self.setText(0, self.labelText)
         if self.settingType == CRS:
             def edit():
-                selector = QgsGenericProjectionSelector()
-                selector.setSelectedAuthId(value)
+                selector = QgsProjectionSelectionDialog()
+                selector.setCrs(value);
                 if selector.exec_():
-                    authId = selector.selectedAuthId()
-                    if authId.upper().startswith("EPSG:"):
-                        self.lineEdit.setText(authId)
+                    crs = selector.crs()
+                    if crs.upper().startswith("EPSG:"):
+                        self.lineEdit.setText(crs)
             self._addTextBoxWithLink("Edit", edit, False)
         elif self.settingType == FILES:
             def edit():
