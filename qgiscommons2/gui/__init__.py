@@ -2,6 +2,7 @@ from qgiscommons2.utils import _callerName, _callerPath, pluginDetails
 from qgiscommons2.settings import pluginSetting, setPluginSetting
 from PyQt4 import QtGui, QtCore, uic
 from qgis.core import *
+from qgis.gui import QgsMessageBar
 from qgis.utils import iface
 import inspect
 import os
@@ -74,12 +75,12 @@ def removeAboutMenu(menuName, parentMenuFunction=None):
     action = _aboutActions.pop(menuName, None)
     action.deleteLater()
 
-def openAboutDialog(namespace):    
-    showMessageDialog("Plugin info", pluginDetails(namespace))    
+def openAboutDialog(namespace):
+    showMessageDialog("Plugin info", pluginDetails(namespace))
 
 def showMessageDialog(title, text):
     '''
-    Show a dialog containing a given text, with a given title. 
+    Show a dialog containing a given text, with a given title.
 
     The text accepts HTML syntax
     '''
@@ -241,3 +242,28 @@ def execute(func, message = None):
         if not waitCursor:
             QtGui.QApplication.restoreOverrideCursor()
         QtCore.QCoreApplication.processEvents()
+
+#=====
+
+_progress = None
+_progressMessageBar = None
+def startProgressBar(title, totalSteps):
+    global _progress
+    global _progressMessageBar
+    _progressMessageBar = iface.messageBar().createMessage(title)
+    _progress = QtGui.QProgressBar()
+    _progress.setMaximum(totalSteps)
+    _progress.setValue(0)
+    _progress.setAlignment(QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
+    _progressMessageBar.layout().addWidget(_progress)
+    iface.messageBar().pushWidget(_progressMessageBar, QgsMessageBar.INFO)
+
+
+def setProgressValue(value):
+    if _progress is not None:
+        _progress.setValue(value)
+
+def closeProgressBar():
+    iface.messageBar().clearWidgets()
+    global _progress
+    _progress = None
