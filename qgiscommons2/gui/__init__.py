@@ -183,7 +183,7 @@ class ExecutorThread(QtCore.QThread):
     def run (self):
         try:
             self.returnValue = self.func()
-        except Exception, e:
+        except Exception as e:
             self.exception = e
         finally:
             self.finished.emit()

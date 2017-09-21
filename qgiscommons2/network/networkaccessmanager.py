@@ -106,7 +106,7 @@ class NetworkAccessManager(object):
         nam = NetworkAccessManager(authcgf)
         try:
             (response, content) = nam.request('http://www.example.com')
-        except RequestsException, e:
+        except RequestsException as e:
             # Handle exception
             pass
 
@@ -121,7 +121,7 @@ class NetworkAccessManager(object):
         try:
             nam.request('http://www.example.com', blocking=False)
             nam.reply.finished.connect(a_signal_listener)
-        except RequestsException, e:
+        except RequestsException as e:
             # Handle exception
             pass
 
