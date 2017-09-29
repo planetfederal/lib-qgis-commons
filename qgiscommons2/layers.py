@@ -193,7 +193,7 @@ def layerFromName(name):
             return layer
     raise WrongLayerNameException()
 
-def layerFromSource(name):
+def layerFromSource(source):
     '''
     Returns the layer from the current project with the passed source
     Raises WrongLayerSourceException if no layer with that source is found
