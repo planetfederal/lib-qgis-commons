@@ -41,10 +41,9 @@ def removeHelpMenu(menuName, parentMenuFunction=None):
 
 def openHelp(helpPath=None):
     if helpPath is None:
-        helpPath = os.path.join(os.path.dirname(_callerPath()), "docs", "html", "index.html")
+        helpPath = "file://{}".format(os.path.join(os.path.dirname(_callerPath()), "docs", "html", "index.html"))
 
-    webbrowser.open_new("file://{}".format(helpPath))
-
+    webbrowser.open_new(helpPath)
 
 _aboutActions = {}
 def addAboutMenu(menuName, parentMenuFunction=None):
