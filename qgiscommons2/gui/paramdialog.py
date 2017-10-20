@@ -1,10 +1,10 @@
 from qgiscommons2.utils import _callerName, _callerPath
 from qgiscommons2.gui.authconfigselect import AuthConfigSelectDialog
-from PyQt4.QtCore import *
+from qgis.PyQt.QtCore import *
 import os
 import json
 from collections import defaultdict
-from PyQt4.QtGui import *
+from qgis.PyQt.QtGui import *
 from qgis.core import *
 from qgis.gui import *
 from qgis.utils import iface
