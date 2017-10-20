@@ -21,15 +21,28 @@ __copyright__ = '(C) 2017 Boundless, http://boundlessgeo.com'
 
 __revision__ = '$Format:%H$'
 
-from PyQt4.QtGui import (
-    QDialog,
-    QVBoxLayout,
-    QDialogButtonBox,
-    QPushButton,
-    QLineEdit,
-    QWidget,
-)
-from PyQt4.QtCore import Qt
+
+try:
+    from qgis.PyQt.QtGui import (
+        QDialog,
+        QVBoxLayout,
+        QDialogButtonBox,
+        QPushButton,
+        QLineEdit,
+        QWidget,
+    )
+except ImportError:
+    from qgis.PyQt.QtWidgets import (
+        QDialog,
+        QVBoxLayout,
+        QDialogButtonBox,
+        QPushButton,
+        QLineEdit,
+        QWidget,
+    )
+    
+from qgis.PyQt.QtCore import Qt
+
 from qgis.gui import QgsAuthConfigSelect
 
 class AuthConfigSelectDialog(QDialog):
