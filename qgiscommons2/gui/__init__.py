@@ -1,6 +1,7 @@
 from qgiscommons2.utils import _callerName, _callerPath, pluginDetails
 from qgiscommons2.settings import pluginSetting, setPluginSetting
 from qgis.PyQt import QtGui, QtCore, uic
+from qgis.PyQt.QtWidgets import QPushButton
 from qgis.core import *
 from qgis.gui import QgsMessageBar
 from qgis.utils import iface
@@ -247,29 +248,44 @@ def execute(func, message = None):
 _progress = None
 _progressMessageBar = None
 _progressTextLabel = None
-
+_progressActive = False
+    
 def startProgressBar(title, totalSteps):
     global _progress
     global _progressMessageBar
+    global _progressActive
+    closeProgressBar()
+    _progressActive = True
     _progressMessageBar = iface.messageBar().createMessage(title)
     _progress = QtGui.QProgressBar()
-    _progress.setMaximum(totalSteps)
-    _progress.setValue(0)
+    _progress.setRange(0,totalSteps)
+    #_progress.setValue(0)
     _progress.setAlignment(QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
     _progressMessageBar.layout().addWidget(_progress)
+    cancelButton = QPushButton("Cancel")
+    cancelButton.clicked.connect(closeProgressBar)
+    _progressMessageBar.layout().addWidget(cancelButton)
     iface.messageBar().pushWidget(_progressMessageBar, QgsMessageBar.INFO)
-
+    QtCore.QCoreApplication.processEvents()
+    
 def setProgressText(text):
     if _progressMessageBar is not None:
         _progressMessageBar.setText(text)
+        QtCore.QCoreApplication.processEvents()
 
 def setProgressValue(value):
     if _progress is not None:
         _progress.setValue(value)
+        QtCore.QCoreApplication.processEvents()
+        
+def isProgressCanceled():
+    return not _progressActive
 
 def closeProgressBar():
     iface.messageBar().clearWidgets()
     global _progress
     global _progressMessageBar
+    global _progressActive
+    _progressActive = False
     _progress = None
     _progressMessageBar = None
