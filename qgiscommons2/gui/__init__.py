@@ -246,6 +246,8 @@ def execute(func, message = None):
 
 _progress = None
 _progressMessageBar = None
+_progressTextLabel = None
+
 def startProgressBar(title, totalSteps):
     global _progress
     global _progressMessageBar
@@ -257,6 +259,9 @@ def startProgressBar(title, totalSteps):
     _progressMessageBar.layout().addWidget(_progress)
     iface.messageBar().pushWidget(_progressMessageBar, QgsMessageBar.INFO)
 
+def setProgressText(text):
+    if _progressMessageBar is not None:
+        _progressMessageBar.setText(text)
 
 def setProgressValue(value):
     if _progress is not None:
@@ -265,4 +270,6 @@ def setProgressValue(value):
 def closeProgressBar():
     iface.messageBar().clearWidgets()
     global _progress
+    global _progressMessageBar
     _progress = None
+    _progressMessageBar = None
