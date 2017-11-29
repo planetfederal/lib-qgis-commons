@@ -131,7 +131,7 @@ def newVectorLayer(filename, fields, geometryType, crs, encoding="utf-8"):
     if isinstance(crs, basestring):
         crs = QgsCoordinateReferenceSystem(crs)
     if filename is None:
-        uri = self.GEOM_TYPE_MAP[geometryType]
+        uri = GEOM_TYPE_MAP[geometryType]
         if crs.isValid():
             uri += '?crs=' + crs.authid() + '&'
         fieldsdesc = ['field=' + f for f in fields]
