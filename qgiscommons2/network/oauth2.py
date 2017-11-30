@@ -24,7 +24,8 @@ __date__ = 'March 2017'
 __copyright__ = '(C) 2017 Boundless, http://boundlessgeo.com'
 
 import json
-from qgis.core import (QgsAuthManager,
+from qgis.core import (QgsApplication,
+                       QgsAuthManager,
                        QgsAuthMethodConfig)
 
 
@@ -32,13 +33,20 @@ AUTHCFG_ID = "conect1"  # Standard name for connect OAuth2 configuration
 AUTHCFG_NAME = "Boundless OAuth2 API"
 
 
+def auth_manager():
+    """Return auth manager relative to QGIS version singleton pattern
+    """
+    if hasattr(QgsApplication, 'authManager'):
+        return QgsApplication.authManager()  # QGIS 3
+    else:
+        return QgsAuthManager.instance()  # QGIS 2
 
 def oauth2_supported():
     """Check wether current QGIS installation has all requirements to
     consume BCS services, current checks
     - OAuth2 auth plugin is available
     """
-    return 'OAuth2' in QgsAuthManager.instance().authMethodsKeys()
+    return 'OAuth2' in auth_manager().authMethodsKeys()
 
 def get_oauth_authcfg(authcfg_id=AUTHCFG_ID):
     """Check if the given authcfg_id (or the default) exists, and if it's valid
@@ -46,7 +54,7 @@ def get_oauth_authcfg(authcfg_id=AUTHCFG_ID):
     # Handle empty strings
     if not authcfg_id:
         authcfg_id = AUTHCFG_ID
-    configs = QgsAuthManager.instance().availableAuthMethodConfigs()
+    configs = auth_manager().availableAuthMethodConfigs()
     if authcfg_id in configs \
             and configs[authcfg_id].isValid() \
             and configs[authcfg_id].method() == 'OAuth2':
@@ -78,18 +86,18 @@ def setup_oauth(username, password, basemaps_token_uri, authcfg_id=AUTHCFG_ID, a
      "version" : 1
     }
 
-    if authcfg_id not in QgsAuthManager.instance().availableAuthMethodConfigs():
+    if authcfg_id not in auth_manager().availableAuthMethodConfigs():
         authConfig = QgsAuthMethodConfig('OAuth2')
         authConfig.setId(authcfg_id)
         authConfig.setName(authcfg_name)
         authConfig.setConfig('oauth2config', json.dumps(cfgjson))
-        if QgsAuthManager.instance().storeAuthenticationConfig(authConfig):
+        if auth_manager().storeAuthenticationConfig(authConfig):
             return authcfg_id
     else:
         authConfig = QgsAuthMethodConfig()
-        QgsAuthManager.instance().loadAuthenticationConfig(authcfg_id, authConfig, True)
+        auth_manager().loadAuthenticationConfig(authcfg_id, authConfig, True)
         authConfig.setName(authcfg_name)
         authConfig.setConfig('oauth2config', json.dumps(cfgjson))
-        if QgsAuthManager.instance().updateAuthenticationConfig(authConfig):
+        if auth_manager().updateAuthenticationConfig(authConfig):
             return authcfg_id
     return None

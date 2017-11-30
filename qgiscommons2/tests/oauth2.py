@@ -55,7 +55,11 @@ class OAuth2Test(unittest.TestCase):
     def setUpClass(cls):
         cls.data_dir = os.path.join(os.path.dirname(__file__), 'data')
         cls.authcfg = None
-        cls.authm = QgsAuthManager.instance()
+        if hasattr(QgsApplication, 'authManager'):
+            cls.authm = QgsApplication.authManager()  # QGIS 3
+        else:
+            cls.authm = QgsAuthManager.instance()  # QGIS 2
+        assert cls.authm is not None, 'QgsAuthManager instance not available'
         assert not cls.authm.isDisabled(), cls.authm.disabledMessage()
         cls.mpass = AUTHDB_MASTERPWD  # master password
 
