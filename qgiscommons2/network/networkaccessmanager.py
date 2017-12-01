@@ -30,7 +30,12 @@ import urllib.request, urllib.error, urllib.parse
 from qgis.PyQt.QtCore import pyqtSlot, QUrl, QEventLoop, QTimer, QCoreApplication
 from qgis.PyQt.QtNetwork import QNetworkRequest, QNetworkReply
 
-from qgis.core import QgsNetworkAccessManager, QgsAuthManager, QgsMessageLog
+from qgis.core import (
+    QgsApplication,
+    QgsNetworkAccessManager,
+    QgsAuthManager,
+    QgsMessageLog
+)
 
 # FIXME: ignored
 DEFAULT_MAX_REDIRECTS = 4
@@ -163,6 +168,14 @@ class NetworkAccessManager(object):
     def httpResult(self):
         return self.http_call_result
 
+    def auth_manager():
+        """Return auth manager relative to QGIS version singleton pattern
+        """
+        if hasattr(QgsApplication, 'authManager'):
+            return QgsApplication.authManager()  # QGIS 3
+        else:
+            return QgsAuthManager.instance()  # QGIS 2
+
     def request(self, url, method="GET", body=None, headers=None, redirections=DEFAULT_MAX_REDIRECTS, connection_type=None, blocking=True):
         """
         Make a network request by calling QgsNetworkAccessManager.
@@ -191,7 +204,7 @@ class NetworkAccessManager(object):
                 req.setRawHeader(k, v)
         if self.authid:
             self.msg_log("Update request w/ authid: {0}".format(self.authid))
-            QgsAuthManager.instance().updateNetworkRequest(req, self.authid)
+            self.auth_manager().updateNetworkRequest(req, self.authid)
         if self.reply is not None and self.reply.isRunning():
             self.reply.close()
         if method.lower() == 'delete':
@@ -213,7 +226,7 @@ class NetworkAccessManager(object):
             self.reply = func(req)
         if self.authid:
             self.msg_log("Update reply w/ authid: {0}".format(self.authid))
-            QgsAuthManager.instance().updateNetworkReply(self.reply, self.authid)
+            self.auth_manager().updateNetworkReply(self.reply, self.authid)
 
         # necessary to trap local timout manage by QgsNetworkAccessManager
         # calling QgsNetworkAccessManager::abortRequest
@@ -259,7 +272,7 @@ class NetworkAccessManager(object):
     @pyqtSlot()
     def requestTimedOut(self, reply):
         """Trap the timeout. In Async mode requestTimedOut is called after replyFinished"""
-        # adapt http_call_result basing on receiving qgs timer timout signal 
+        # adapt http_call_result basing on receiving qgs timer timout signal
         self.exception_class = RequestsExceptionTimeout
         self.http_call_result.exception = RequestsExceptionTimeout("Timeout error")
 
