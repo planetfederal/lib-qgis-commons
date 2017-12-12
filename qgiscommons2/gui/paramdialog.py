@@ -179,7 +179,7 @@ class ParametersDialog(QDialog):
             
     def accept(self):
         values = {}
-        for name, widget in self.widgets.iteritems():
+        for name, widget in self.widgets.items():
             try:
                 ret[name] = self.valueFromWidget(widget, parameterFromName(self.parameters, name).paramtype)
             except WrongValueException:

@@ -26,6 +26,7 @@ def _callerPath():
     return module.__file__
 
 def pluginDetails(namespace):
+    plugins.rebuild()
     plugin = plugins.all()[namespace]
     html = '<style>body, table {padding:0px; margin:0px; font-family:verdana; font-size: 1.1em;}</style>'
     html += '<body>'

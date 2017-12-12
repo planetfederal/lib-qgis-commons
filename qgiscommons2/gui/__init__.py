@@ -1,7 +1,7 @@
 from qgiscommons2.utils import _callerName, _callerPath, pluginDetails
 from qgiscommons2.settings import pluginSetting, setPluginSetting
 from qgis.PyQt import QtGui, QtCore, uic
-from qgis.PyQt.QtWidgets import QPushButton
+from qgis.PyQt.QtWidgets import QPushButton, QAction
 from qgis.core import *
 from qgis.gui import QgsMessageBar
 from qgis.utils import iface
@@ -21,7 +21,7 @@ def addHelpMenu(menuName, parentMenuFunction=None):
     parentMenuFunction = parentMenuFunction or iface.addPluginToMenu
     namespace = _callerName().split(".")[0]
     path = "file://{}".format(os.path.join(os.path.dirname(_callerPath()), "docs",  "html", "index.html"))
-    helpAction = QtGui.QAction(
+    helpAction = QAction(
         QgsApplication.getThemeIcon('/mActionHelpAPI.png'),
         "Plugin help...",
         iface.mainWindow())
@@ -57,7 +57,7 @@ def addAboutMenu(menuName, parentMenuFunction=None):
 
     parentMenuFunction = parentMenuFunction or iface.addPluginToMenu
     namespace = _callerName().split(".")[0]
-    aboutAction = QtGui.QAction(
+    aboutAction = QAction(
         QgsApplication.getThemeIcon('/mActionHelpContents.svg'),
         "About...",
         iface.mainWindow())

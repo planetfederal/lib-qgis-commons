@@ -11,8 +11,6 @@ except:
     from qgis.PyQt.QtCore import QSettings
     settings = QSettings()
 
-
-
 try:
     from qgis.PyQt.QtCore import QPyNullVariant
 except:
