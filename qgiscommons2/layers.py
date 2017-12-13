@@ -80,6 +80,7 @@ except:
     GEOM_TYPE_MAP = {
         QgsWkbTypes.Point: 'Point',
         QgsWkbTypes.LineString: 'LineString',
+        QgsWkbTypes.Polygon: 'Polygon',
         QgsWkbTypes.MultiPoint: 'MultiPoint',
         QgsWkbTypes.MultiLineString: 'MultiLineString',
         QgsWkbTypes.MultiPolygon: 'MultiPolygon',
