@@ -1,7 +1,7 @@
 from qgiscommons2.utils import _callerName, _callerPath, pluginDetails
 from qgiscommons2.settings import pluginSetting, setPluginSetting
 from qgis.PyQt import QtGui, QtCore, uic
-from qgis.PyQt.QtWidgets import QPushButton, QAction
+from qgis.PyQt.QtWidgets import QPushButton, QAction, QApplication
 from qgis.core import *
 from qgis.gui import QgsMessageBar
 from qgis.utils import iface
@@ -200,13 +200,13 @@ def execute(func, message = None):
     :param message: The message to display in the wait dialog. If not passed, the dialog won't be shown
     '''
     global _dialog
-    cursor = QtGui.QApplication.overrideCursor()
+    cursor = QApplication.overrideCursor()
     waitCursor = (cursor is not None and cursor.shape() == QtCore.Qt.WaitCursor)
     dialogCreated = False
     try:
         QtCore.QCoreApplication.processEvents()
         if not waitCursor:
-            QtGui.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
+            QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
         if message is not None:
             t = ExecutorThread(func)
             loop = QtCore.QEventLoop()
@@ -224,7 +224,7 @@ def execute(func, message = None):
             else:
                 oldText = _dialog.labelText()
                 _dialog.setLabelText(message)
-            QtGui.QApplication.processEvents()
+            QApplication.processEvents()
             t.start()
             loop.exec_(flags = QtCore.QEventLoop.ExcludeUserInputEvents)
             if t.exception is not None:
@@ -240,7 +240,7 @@ def execute(func, message = None):
             else:
                 _dialog.setLabelText(oldText)
         if not waitCursor:
-            QtGui.QApplication.restoreOverrideCursor()
+            QApplication.restoreOverrideCursor()
         QtCore.QCoreApplication.processEvents()
 
 #=====
