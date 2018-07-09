@@ -5,6 +5,7 @@ import os
 import json
 from collections import defaultdict
 from qgis.PyQt.QtGui import *
+from qgis.PyQt.QtWidgets import *
 from qgis.core import *
 from qgis.gui import *
 from qgis.utils import iface
@@ -13,13 +14,16 @@ from qgis.utils import iface
 
 BOOL = "bool"
 STRING = "string"
-TEXT = "text" # a multile string
+PASSWORD = "password"
+TEXT = "text" # a multiline string
 NUMBER = "number"
 FILES = "files"
 FOLDER = "folder"
 CHOICE  ="choice"
 CRS = "crs"
 AUTHCFG = "authcfg"
+VECTOR = "vector"
+RASTER = "raster"
 
 
 
@@ -38,25 +42,29 @@ def parameterFromName(params, name):
         if p.name == name:
             return p
 
-def openParametersDialog(params):
+def openParametersDialog(params, title=None):
     '''
     Opens a dialog to enter parameters.
     Parameters are passed as a list of Parameter objects
     Returns a dict with param names as keys and param values as values
     Returns None if the dialog was cancelled
     '''
-    dlg = ParametersDialog(params)
+    QApplication.setOverrideCursor(QCursor(Qt.ArrowCursor))
+    dlg = ParametersDialog(params, title)
     dlg.exec_()
+    QApplication.restoreOverrideCursor()
     return dlg.values
 
 #########################################
 
 class ParametersDialog(QDialog):
 
-    def __init__(self, params):
+    def __init__(self, params, title=None):
         self.params = params
         self.widgets = {}
         QDialog.__init__(self)
+        title = title or "Parameters dialog"
+        self.setWindowTitle(title)
         self.setupUi()
 
     def setupUi(self):
@@ -77,8 +85,6 @@ class ParametersDialog(QDialog):
         self.horizontalLayout.addWidget(self.buttonBox)
         self.verticalLayout.addStretch()
         self.verticalLayout.addLayout(self.horizontalLayout)
-
-        self.setWindowTitle("Parameters dialog")
 
         self.buttonBox.accepted.connect(self.accept)
         self.buttonBox.rejected.connect(self.reject)
@@ -137,7 +143,7 @@ class ParametersDialog(QDialog):
             return check
         elif param.paramtype== CHOICE:
             combo = QComboBox()
-            for option in param.options["options"]:
+            for option in param.options:
                 combo.addItem(option)
             idx = combo.findText(str(param.default))
             combo.setCurrentIndex(idx)
@@ -154,6 +160,18 @@ class ParametersDialog(QDialog):
                     self.value = dlg.authcfg
                     lineEdit.setText(str(dlg.authcfg))
             return TextBoxWithLink("Select", edit, param.default, True)
+        elif param.paramtype==VECTOR:
+            combo = QgsMapLayerComboBox()
+            combo.setFilters(QgsMapLayerProxyModel.VectorLayer)
+            return combo
+        elif param.paramtype==RASTER:
+            combo = QgsMapLayerComboBox()
+            combo.setFilters(QgsMapLayerProxyModel.RasterLayer)
+            return combo        
+        elif param.paramtype==PASSWORD:
+            lineEdit = QLineEdit()
+            lineEdit.setEchoMode(QLineEdit.Password)
+            return lineEdit            
         else:
             lineEdit = QLineEdit()
             lineEdit.setText(str(param.default))
@@ -167,21 +185,25 @@ class ParametersDialog(QDialog):
                 v = float(widget.text())
                 return
             elif paramtype == CHOICE:
-                return widget.combo.currentText()
+                return widget.currentText()
             elif paramtype == TEXT:
                 return widget.toPlainText()
-            elif paramtype in [CRS, STRING, FILES, FOLDER, AUTHCFG]:
+            elif paramtype == STRING:                
+                return widget.text()
+            elif paramtype in [CRS, FILES, FOLDER, AUTHCFG]:
                 return widget.value
+            elif paramtype in [RASTER, VECTOR]:
+                return widget.currentLayer()
             else:
                 return widget.text()
         except:
-            raise WrongValueException()
+            raise #WrongValueException()
             
     def accept(self):
         values = {}
         for name, widget in self.widgets.items():
             try:
-                ret[name] = self.valueFromWidget(widget, parameterFromName(self.parameters, name).paramtype)
+                values[name] = self.valueFromWidget(widget, parameterFromName(self.params, name).paramtype)
             except WrongValueException:
                 #show warning
                 return

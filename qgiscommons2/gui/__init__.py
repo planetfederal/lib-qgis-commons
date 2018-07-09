@@ -1,7 +1,6 @@
 from qgiscommons2.utils import _callerName, _callerPath, pluginDetails
 from qgiscommons2.settings import pluginSetting, setPluginSetting
-from qgis.PyQt import QtGui, QtCore, uic
-from qgis.PyQt.QtWidgets import QPushButton, QAction, QApplication
+from qgis.PyQt import QtGui, QtCore, uic, QtWidgets
 from qgis.core import *
 from qgis.gui import QgsMessageBar
 from qgis.utils import iface
@@ -21,7 +20,7 @@ def addHelpMenu(menuName, parentMenuFunction=None):
     parentMenuFunction = parentMenuFunction or iface.addPluginToMenu
     namespace = _callerName().split(".")[0]
     path = "file://{}".format(os.path.join(os.path.dirname(_callerPath()), "docs",  "html", "index.html"))
-    helpAction = QAction(
+    helpAction = QtWidgets.QAction(
         QgsApplication.getThemeIcon('/mActionHelpAPI.png'),
         "Plugin help...",
         iface.mainWindow())
@@ -57,7 +56,7 @@ def addAboutMenu(menuName, parentMenuFunction=None):
 
     parentMenuFunction = parentMenuFunction or iface.addPluginToMenu
     namespace = _callerName().split(".")[0]
-    aboutAction = QAction(
+    aboutAction = QtWidgets.QAction(
         QgsApplication.getThemeIcon('/mActionHelpContents.svg'),
         "About...",
         iface.mainWindow())
@@ -129,18 +128,18 @@ def askForFiles(parent, msg = None, isSave = False, allowMultiple = False, exts 
         exts = [exts]
     extString = ";; ".join([" %s files (*.%s)" % (e.upper(), e) if e != "*" else "All files (*.*)" for e in exts])
     if allowMultiple:
-        ret = QtGui.QFileDialog.getOpenFileNames(parent, msg, path, '*.' + extString)
+        ret = QtWidgets.QFileDialog.getOpenFileNames(parent, msg, path, '*.' + extString)
         if ret:
             f = ret[0]
         else:
             f = ret = None
     else:
         if isSave:
-            ret = QtGui.QFileDialog.getSaveFileName(parent, msg, path, '*.' + extString) or None
+            ret = QtWidgets.QFileDialog.getSaveFileName(parent, msg, path, '*.' + extString) or None
             if ret is not None and not ret.endswith(exts[0]):
                 ret += "." + exts[0]
         else:
-            ret = QtGui.QFileDialog.getOpenFileName(parent, msg , path, '*.' + extString) or None
+            ret = QtWidgets.QFileDialog.getOpenFileName(parent, msg , path, '*.' + extString) or None
         f = ret
 
     if f is not None:
@@ -161,7 +160,7 @@ def askForFolder(parent, msg = None):
     name = "/".join([LAST_PATH, caller[-1]])
     namespace = caller[0]
     path = pluginSetting(name, namespace)
-    folder =  QtGui.QFileDialog.getExistingDirectory(parent, msg, path)
+    folder =  QtWidgets.QFileDialog.getExistingDirectory(parent, msg, path)
     if folder:
         setPluginSetting(name, folder, namespace)
     return folder
@@ -200,13 +199,13 @@ def execute(func, message = None):
     :param message: The message to display in the wait dialog. If not passed, the dialog won't be shown
     '''
     global _dialog
-    cursor = QApplication.overrideCursor()
+    cursor = QtWidgets.QApplication.overrideCursor()
     waitCursor = (cursor is not None and cursor.shape() == QtCore.Qt.WaitCursor)
     dialogCreated = False
     try:
         QtCore.QCoreApplication.processEvents()
         if not waitCursor:
-            QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
+            QtWidgets.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
         if message is not None:
             t = ExecutorThread(func)
             loop = QtCore.QEventLoop()
@@ -224,7 +223,7 @@ def execute(func, message = None):
             else:
                 oldText = _dialog.labelText()
                 _dialog.setLabelText(message)
-            QApplication.processEvents()
+            QtWidgets.QApplication.processEvents()
             t.start()
             loop.exec_(flags = QtCore.QEventLoop.ExcludeUserInputEvents)
             if t.exception is not None:
@@ -240,7 +239,7 @@ def execute(func, message = None):
             else:
                 _dialog.setLabelText(oldText)
         if not waitCursor:
-            QApplication.restoreOverrideCursor()
+            QtWidgets.QApplication.restoreOverrideCursor()
         QtCore.QCoreApplication.processEvents()
 
 #=====
@@ -249,7 +248,7 @@ _progress = None
 _progressMessageBar = None
 _progressTextLabel = None
 _progressActive = False
-    
+
 def startProgressBar(title, totalSteps):
     global _progress
     global _progressMessageBar
@@ -257,17 +256,17 @@ def startProgressBar(title, totalSteps):
     closeProgressBar()
     _progressActive = True
     _progressMessageBar = iface.messageBar().createMessage(title)
-    _progress = QtGui.QProgressBar()
+    _progress = QtWidgets.QProgressBar()
     _progress.setRange(0,totalSteps)
     #_progress.setValue(0)
     _progress.setAlignment(QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
     _progressMessageBar.layout().addWidget(_progress)
-    cancelButton = QPushButton("Cancel")
+    cancelButton = QtWidgets.QPushButton("Cancel")
     cancelButton.clicked.connect(closeProgressBar)
     _progressMessageBar.layout().addWidget(cancelButton)
-    iface.messageBar().pushWidget(_progressMessageBar, QgsMessageBar.INFO)
+    iface.messageBar().pushWidget(_progressMessageBar, Qgis.Info)
     QtCore.QCoreApplication.processEvents()
-    
+
 def setProgressText(text):
     if _progressMessageBar is not None:
         _progressMessageBar.setText(text)
@@ -277,7 +276,7 @@ def setProgressValue(value):
     if _progress is not None:
         _progress.setValue(value)
         QtCore.QCoreApplication.processEvents()
-        
+
 def isProgressCanceled():
     return not _progressActive
 

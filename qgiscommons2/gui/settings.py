@@ -313,8 +313,8 @@ class TreeSettingItem(QTreeWidgetItem):
         setPluginSetting(self.name, value, self.namespace)
 
     def value(self):
-        self.setBackgroundColor(0, Qt.white)
-        self.setBackgroundColor(1, Qt.white)
+        self.setBackground(0, Qt.white)
+        self.setBackground(1, Qt.white)
         try:
             if self.settingType == BOOL:
                 return self.checkState(1) == Qt.Checked
@@ -330,8 +330,8 @@ class TreeSettingItem(QTreeWidgetItem):
             else:
                 return self.text(1)
         except:
-            self.setBackgroundColor(0, Qt.yellow)
-            self.setBackgroundColor(1, Qt.yellow)
+            self.setBackground(0, Qt.yellow)
+            self.setBackground(1, Qt.yellow)
             raise WrongValueException()
 
     def setValue(self, value):

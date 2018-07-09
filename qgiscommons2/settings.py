@@ -93,6 +93,7 @@ def pluginSettings(namespace=None):
 
 _settings = {}
 def readSettings(settings_path=None):
+    global _settings
     '''
     Reads the settings corresponding to the plugin from where the method is called.
     This function has to be called in the __init__ method of the plugin class.
