@@ -4,7 +4,7 @@ import uuid
 import time
 
 from qgis.PyQt.QtCore import QDir
-from qgis.PyQt.QtGui import QFileDialog
+from qgis.PyQt.QtWidgets import QFileDialog
 
 from qgiscommons2.utils import _callerName
 
