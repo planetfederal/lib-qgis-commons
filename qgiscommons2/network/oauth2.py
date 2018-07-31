@@ -34,12 +34,8 @@ AUTHCFG_NAME = "Boundless OAuth2 API"
 
 
 def auth_manager():
-    """Return auth manager relative to QGIS version singleton pattern
-    """
-    if hasattr(QgsApplication, 'authManager'):
-        return QgsApplication.authManager()  # QGIS 3
-    else:
-        return QgsAuthManager.instance()  # QGIS 2
+    return QgsApplication.authManager()
+
 
 def oauth2_supported():
     """Check wether current QGIS installation has all requirements to

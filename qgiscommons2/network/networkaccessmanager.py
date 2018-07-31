@@ -16,8 +16,7 @@
 *                                                                         *
 ***************************************************************************
 """
-from future import standard_library
-standard_library.install_aliases()
+
 from builtins import str
 from builtins import object
 
@@ -25,6 +24,7 @@ __author__ = 'Alessandro Pasotti'
 __date__ = 'August 2016'
 
 import re
+import io
 import urllib.request, urllib.error, urllib.parse
 
 from qgis.PyQt.QtCore import pyqtSlot, QUrl, QEventLoop, QTimer, QCoreApplication
@@ -168,13 +168,8 @@ class NetworkAccessManager(object):
     def httpResult(self):
         return self.http_call_result
 
-    def auth_manager():
-        """Return auth manager relative to QGIS version singleton pattern
-        """
-        if hasattr(QgsApplication, 'authManager'):
-            return QgsApplication.authManager()  # QGIS 3
-        else:
-            return QgsAuthManager.instance()  # QGIS 2
+    def auth_manager(self):
+        return QgsApplication.authManager()
 
     def request(self, url, method="GET", body=None, headers=None, redirections=DEFAULT_MAX_REDIRECTS, connection_type=None, blocking=True):
         """
@@ -201,7 +196,7 @@ class NetworkAccessManager(object):
                 pass
             for k, v in list(headers.items()):
                 self.msg_log("Setting header %s to %s" % (k, v))
-                req.setRawHeader(k, v)
+                req.setRawHeader(k.encode(), v.encode())
         if self.authid:
             self.msg_log("Update request w/ authid: {0}".format(self.authid))
             self.auth_manager().updateNetworkRequest(req, self.authid)
@@ -219,8 +214,10 @@ class NetworkAccessManager(object):
         for k, v in list(headers.items()):
             self.msg_log("%s: %s" % (k, v))
         if method.lower() in ['post', 'put']:
-            if isinstance(body, file):
+            if isinstance(body, io.IOBase):
                 body = body.read()
+            if isinstance(body, str):
+                body = body.encode()
             self.reply = func(req, body)
         else:
             self.reply = func(req)
@@ -263,20 +260,17 @@ class NetworkAccessManager(object):
 
         return (self.http_call_result, self.http_call_result.content)
 
-    @pyqtSlot()
     def downloadProgress(self, bytesReceived, bytesTotal):
         """Keep track of the download progress"""
         #self.msg_log("downloadProgress %s of %s ..." % (bytesReceived, bytesTotal))
         pass
 
-    @pyqtSlot()
     def requestTimedOut(self, reply):
         """Trap the timeout. In Async mode requestTimedOut is called after replyFinished"""
         # adapt http_call_result basing on receiving qgs timer timout signal
         self.exception_class = RequestsExceptionTimeout
         self.http_call_result.exception = RequestsExceptionTimeout("Timeout error")
 
-    @pyqtSlot()
     def replyFinished(self):
         err = self.reply.error()
         httpStatus = self.reply.attribute(QNetworkRequest.HttpStatusCodeAttribute)
@@ -351,6 +345,7 @@ class NetworkAccessManager(object):
 
                 ba = self.reply.readAll()
                 self.http_call_result.content = bytes(ba)
+                self.http_call_result.text = str(ba.data(), encoding='utf-8')
                 self.http_call_result.ok = True
 
         # Let's log the whole response for debugging purposes:
@@ -361,7 +356,7 @@ class NetworkAccessManager(object):
         for k, v in list(self.http_call_result.headers.items()):
             self.msg_log("%s: %s" % (k, v))
         if len(self.http_call_result.content) < 1024:
-            self.msg_log("Payload :\n%s" % self.http_call_result.content)
+            self.msg_log("Payload :\n%s" % self.http_call_result.text)
         else:
             self.msg_log("Payload is > 1 KB ...")
 
@@ -379,7 +374,6 @@ class NetworkAccessManager(object):
         else:
             self.msg_log("Reply was already deleted ...")
 
-    @pyqtSlot()
     def sslErrors(self, ssl_errors):
         """
         Handle SSL errors, logging them if debug is on and ignoring them
@@ -391,7 +385,6 @@ class NetworkAccessManager(object):
         if self.disable_ssl_certificate_validation:
             self.reply.ignoreSslErrors()
 
-    @pyqtSlot()
     def abort(self):
         """
         Handle request to cancel HTTP call
