@@ -244,18 +244,21 @@ def execute(func, message = None):
 
 #=====
 
+_messageBar = None
 _progress = None
 _progressMessageBar = None
 _progressTextLabel = None
 _progressActive = False
 
-def startProgressBar(title, totalSteps):
+def startProgressBar(title, totalSteps, messageBar = None):
     global _progress
     global _progressMessageBar
+    global _messageBar
     global _progressActive
     closeProgressBar()
     _progressActive = True
-    _progressMessageBar = iface.messageBar().createMessage(title)
+    _messageBar = messageBar or iface.messageBar()
+    _progressMessageBar = messageBar.createMessage(title)
     _progress = QtWidgets.QProgressBar()
     _progress.setRange(0,totalSteps)
     #_progress.setValue(0)
@@ -264,7 +267,7 @@ def startProgressBar(title, totalSteps):
     cancelButton = QtWidgets.QPushButton("Cancel")
     cancelButton.clicked.connect(closeProgressBar)
     _progressMessageBar.layout().addWidget(cancelButton)
-    iface.messageBar().pushWidget(_progressMessageBar, Qgis.Info)
+    _messageBar.pushWidget(_progressMessageBar, Qgis.Info)
     QtCore.QCoreApplication.processEvents()
 
 def setProgressText(text):
@@ -281,10 +284,13 @@ def isProgressCanceled():
     return not _progressActive
 
 def closeProgressBar():
-    iface.messageBar().clearWidgets()
     global _progress
     global _progressMessageBar
+    global _messageBar
     global _progressActive
+    if _messageBar is not None:
+        _messageBar.clearWidgets()
     _progressActive = False
     _progress = None
     _progressMessageBar = None
+    _messageBar = None
