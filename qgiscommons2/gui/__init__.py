@@ -258,7 +258,7 @@ def startProgressBar(title, totalSteps, messageBar = None):
     closeProgressBar()
     _progressActive = True
     _messageBar = messageBar or iface.messageBar()
-    _progressMessageBar = messageBar.createMessage(title)
+    _progressMessageBar = _messageBar.createMessage(title)
     _progress = QtWidgets.QProgressBar()
     _progress.setRange(0,totalSteps)
     #_progress.setValue(0)
