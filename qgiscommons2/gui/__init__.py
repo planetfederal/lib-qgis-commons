@@ -288,8 +288,11 @@ def closeProgressBar():
     global _progressMessageBar
     global _messageBar
     global _progressActive
-    if _messageBar is not None:
-        _messageBar.clearWidgets()
+    try:
+        if _messageBar is not None:
+            _messageBar.clearWidgets()
+    except:
+        pass # this can happen if _messageBar is no longer valid (i.e. window closed)
     _progressActive = False
     _progress = None
     _progressMessageBar = None
