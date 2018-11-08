@@ -19,11 +19,9 @@ def addHelpMenu(menuName, parentMenuFunction=None):
 
     parentMenuFunction = parentMenuFunction or iface.addPluginToMenu
     namespace = _callerName().split(".")[0]
-    path = "file://{}".format(os.path.join(os.path.dirname(_callerPath()), "docs",  "html", "index.html"))
-    helpAction = QtWidgets.QAction(
-        QgsApplication.getThemeIcon('/mActionHelpAPI.png'),
-        "Plugin help...",
-        iface.mainWindow())
+    path = "file://{}".format(os.path.join(os.path.dirname(_callerPath()), "docs",  "html", "index.html"))    
+    helpAction = QtWidgets.QAction(QgsApplication.getThemeIcon('/mActionHelpContents.svg'), 
+                                    "Plugin help...", iface.mainWindow())
     helpAction.setObjectName(namespace + "help")
     helpAction.triggered.connect(lambda: openHelp(path))
     parentMenuFunction(menuName, helpAction)
@@ -56,10 +54,8 @@ def addAboutMenu(menuName, parentMenuFunction=None):
 
     parentMenuFunction = parentMenuFunction or iface.addPluginToMenu
     namespace = _callerName().split(".")[0]
-    aboutAction = QtWidgets.QAction(
-        QgsApplication.getThemeIcon('/mActionHelpContents.svg'),
-        "About...",
-        iface.mainWindow())
+    icon = QtGui.QIcon(os.path.join(os.path.dirname(os.path.dirname(__file__)), "icons", "help.png"))
+    aboutAction = QtWidgets.QAction(icon, "About...", iface.mainWindow())
     aboutAction.setObjectName(namespace + "about")
     aboutAction.triggered.connect(lambda: openAboutDialog(namespace))
     parentMenuFunction(menuName, aboutAction)
