@@ -37,7 +37,6 @@ from qgis.core import (
     QgsMessageLog
 )
 
-# FIXME: ignored
 DEFAULT_MAX_REDIRECTS = 4
 
 class RequestsException(Exception):
@@ -50,6 +49,9 @@ class RequestsExceptionConnectionError(RequestsException):
     pass
 
 class RequestsExceptionUserAbort(RequestsException):
+    pass
+
+class RequestsMaxRedirects(RequestsException):
     pass
 
 class Map(dict):
@@ -174,8 +176,10 @@ class NetworkAccessManager(object):
     def request(self, url, method="GET", body=None, headers=None, redirections=DEFAULT_MAX_REDIRECTS, connection_type=None, blocking=True):
         """
         Make a network request by calling QgsNetworkAccessManager.
-        redirections argument is ignored and is here only for httplib2 compatibility.
         """
+        self.calling_args = locals()
+        del self.calling_args['self']
+        
         self.msg_log(u'http_call request: {0}'.format(url))
 
         self.blocking_mode = blocking
@@ -335,7 +339,19 @@ class NetworkAccessManager(object):
 
                 self.reply.deleteLater()
                 self.reply = None
-                self.request(redirectionUrl.toString())
+                
+                if self.calling_args['redirections'] <= 0:
+                    self.http_call_result.exception = RequestsMaxRedirects("Network error: Exceeded maximum redirects")
+                    return
+                
+                new_request = {}
+                request_changes = { 'url': redirectionUrl.toString(),
+                                    'redirections': self.calling_args['redirections']-1 }
+                new_request.update(self.calling_args)
+                new_request.update(request_changes)
+                
+                # we want to skip the "normal" end of request on a redirect
+                return self.request(**new_request)
 
             # really end request
             else:
