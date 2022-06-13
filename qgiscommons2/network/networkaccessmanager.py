@@ -51,6 +51,9 @@ class RequestsExceptionConnectionError(RequestsException):
 class RequestsExceptionUserAbort(RequestsException):
     pass
 
+class RequestsMaxRedirects(RequestsException):
+    pass
+
 class Map(dict):
     """
     Example:
@@ -338,6 +341,7 @@ class NetworkAccessManager(object):
                 self.reply = None
                 
                 if self.calling_args['redirections'] <= 0:
+                    self.http_call_result.exception = RequestsMaxRedirects("Network error: Exceeded maximum redirects")
                     return
                 
                 new_request = {}
